@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>cookiemonster inventory</title>
+  <!-- 
+    Single-page HTML Demo
+    --------------------------------------
+    - Sidebar always visible on desktop
+    - Hamburger toggle for mobile
+    - Location field in product form & table
+    - Dashboard, Inventory, and other options on the left side
+  -->
+  <style>
+    /* ==============================
+       1. RESET & VARIABLES
+       ============================== */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    :root {
+      --color-primary: #FF6B6B;   /* bright coral */
+      --color-secondary: #4ECDC4; /* turquoise */
+      --color-accent: #FFE66D;    /* light yellow */
+      --color-neutral: #F7FFF7;   /* off-white */
+      --color-dark: #1A535C;      /* dark teal */
+
+      --font-header: 'Poppins', sans-serif;
+      --font-body: 'Open Sans', sans-serif;
+
+      --sidebar-width: 220px;
+    }
+    body {
+      font-family: var(--font-body), sans-serif;
+      background-color: var(--color-neutral);
+      color: var(--color-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a {
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    /* ==============================
+       2. HEADER
+       ============================== */
+    header {
+      background: var(--color-dark);
+      color: #fff;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      position: relative;
+      z-index: 1000;
+    }
+    .header__logo {
+      font-family: var(--font-header);
+      font-size: 1.5rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .header__actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .header__actions input[type="search"] {
+      padding: 0.3rem 0.5rem;
+      border: none;
+      border-radius: 4px;
+      outline: none;
+      font-size: 0.9rem;
+    }
+    .header__actions button {
+      background-color: var(--color-primary);
+      border: none;
+      color: #fff;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    /* HAMBURGER (visible on mobile) */
+    .hamburger {
+      display: none;
+      cursor: pointer;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .hamburger span {
+      width: 25px;
+      height: 3px;
+      background-color: #fff;
+    }
+
+    /* ==============================
+       3. CONTAINER
+       ============================== */
+    .container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ==============================
+       4. SIDEBAR
+       ============================== */
+    nav.sidebar {
+      width: var(--sidebar-width);
+      background-color: #fff;
+      border-right: 2px solid #eee;
+      padding: 1rem;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+      /* On desktop, it's just visible. No transforms needed. */
+    }
+    nav.sidebar h2 {
+      font-family: var(--font-header);
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: var(--color-dark);
+    }
+    nav.sidebar ul {
+      list-style: none;
+    }
+    nav.sidebar li {
+      padding: 0.5rem 0;
+    }
+    nav.sidebar li a {
+      color: var(--color-dark);
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    nav.sidebar li a:hover {
+      color: var(--color-primary);
+    }
+
+    /* MOBILE: Hide sidebar by default, show with .show class */
+    @media (max-width: 768px) {
+      nav.sidebar {
+        position: absolute;
+        top: 60px;
+        left: 0;
+        height: calc(100vh - 60px);
+        transform: translateX(-100%);
+        z-index: 999;
+      }
+      nav.sidebar.show {
+        transform: translateX(0);
+      }
+      .hamburger {
+        display: flex;
+      }
+    }
+
+    /* ==============================
+       5. MAIN CONTENT
+       ============================== */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* BREADCRUMBS */
+    .breadcrumbs {
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      color: #555;
+    }
+    .breadcrumbs span {
+      color: var(--color-primary);
+    }
+
+    /* ==============================
+       6. DASHBOARD
+       ============================== */
+    .dashboard {
+      display: none;
+    }
+    .dashboard__cards {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .dashboard__card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      flex: 1;
+      min-width: 160px;
+      padding: 1rem;
+    }
+    .dashboard__card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    .dashboard__charts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .dashboard__chart {
+      background: #fff;
+      border-radius: 8px;
+      flex: 1;
+      min-width: 280px;
+      padding: 1rem;
+    }
+
+    /* ==============================
+       7. INVENTORY
+       ============================== */
+    .inventory {
+      display: none;
+    }
+    .inventory__toolbar {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      justify-content: flex-end;
+    }
+    .inventory__toolbar button {
+      background-color: var(--color-primary);
+      border: none;
+      color: #fff;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .inventory__list {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow-x: auto; /* horizontal scroll on small screens */
+    }
+    table.inventory-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px; /* so small screens can scroll horizontally */
+    }
+    table.inventory-table th, table.inventory-table td {
+      text-align: left;
+      padding: 0.5rem;
+      border-bottom: 1px solid #eee;
+      vertical-align: top;
+    }
+    table.inventory-table th {
+      background: var(--color-secondary);
+      color: #fff;
+    }
+    table.inventory-table img {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    /* ==============================
+       8. PRODUCT DETAIL
+       ============================== */
+    .product-detail {
+      display: none;
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .product-detail h2 {
+      margin-bottom: 1rem;
+      font-family: var(--font-header);
+    }
+
+    /* ==============================
+       9. MODAL FORM
+       ============================== */
+    .modal-overlay {
+      position: fixed;
+      top:0; left:0;
+      width:100%;
+      height:100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .modal {
+      background: #fff;
+      border-radius: 8px;
+      width: 600px;
+      max-width: 90%;
+      padding: 1rem;
+    }
+    .modal h2 {
+      margin-bottom: 1rem;
+      font-family: var(--font-header);
+    }
+    .modal form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .modal form label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+    }
+    .modal form input[type="text"],
+    .modal form input[type="number"],
+    .modal form input[type="date"],
+    .modal form select,
+    .modal form textarea {
+      width: 100%;
+      padding: 0.4rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .modal form .full-span {
+      grid-column: 1 / 3;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      grid-column: 1 / 3;
+    }
+    .modal-buttons button {
+      background-color: var(--color-primary);
+      border: none;
+      color: #fff;
+      padding: 0.6rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .close-btn {
+      background-color: #777;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header__logo">cookiemonster inventory</div>
+    <div class="header__actions">
+      <!-- Hamburger: visible on mobile -->
+      <div class="hamburger" id="hamburgerBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <input type="search" placeholder="Search..." id="globalSearch" />
+      <button id="quickAddBtn">Quick Add</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- SIDEBAR (visible on desktop, toggled by hamburger on mobile) -->
+    <nav class="sidebar" id="sidebarMenu">
+      <h2>Fidgeting Fingers</h2>
+      <ul>
+        <li><a id="navDashboard">Dashboard</a></li>
+        <li><a id="navInventory">Inventory</a></li>
+        <li><a id="navProductDetail">Product Detail</a></li>
+      </ul>
+      <h2>Tools</h2>
+      <ul>
+        <li><a id="exportCsv">Export CSV</a></li>
+        <li><a id="importData">Import Data</a></li>
+      </ul>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main>
+      <!-- BREADCRUMBS -->
+      <div class="breadcrumbs">
+        <span id="breadcrumbCurrent">Home</span>
+      </div>
+
+      <!-- DASHBOARD SECTION -->
+      <section class="dashboard" id="dashboardSection">
+        <div class="dashboard__cards">
+          <div class="dashboard__card">
+            <h3>Total Inventory Value</h3>
+            <p id="totalValue">£0.00</p>
+          </div>
+          <div class="dashboard__card">
+            <h3>Total Items</h3>
+            <p id="totalItems">0</p>
+          </div>
+          <div class="dashboard__card">
+            <h3>Low Stock</h3>
+            <p id="lowStockCount">0</p>
+          </div>
+        </div>
+        <div class="dashboard__charts">
+          <div class="dashboard__chart">
+            <canvas id="chartByCategory" width="400" height="200"></canvas>
+          </div>
+          <div class="dashboard__chart">
+            <canvas id="chartByStatus" width="400" height="200"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- INVENTORY SECTION -->
+      <section class="inventory" id="inventorySection">
+        <div class="inventory__toolbar">
+          <button id="btnViewGrid">Grid View</button>
+          <button id="btnViewTable">Table View</button>
+          <button id="batchUpdateBtn">Batch Update</button>
+        </div>
+        <div class="inventory__list">
+          <table class="inventory-table" id="inventoryTable">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Product Name</th>
+                <th>SKU</th>
+                <th>Purchase Price (VAT incl.)</th>
+                <th>Selling Price</th>
+                <th>Stock</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Supplier</th>
+                <th>Date Added</th>
+                <th>Location</th> <!-- LOCATION FIELD -->
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- PRODUCT DETAIL SECTION -->
+      <section class="product-detail" id="productDetailSection">
+        <h2>Product Detail</h2>
+        <div id="productDetailContent">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL (Add/Edit Product) -->
+  <div class="modal-overlay" id="productModalOverlay">
+    <div class="modal">
+      <h2 id="modalTitle">Add Product</h2>
+      <form id="productForm">
+        <div>
+          <label for="pName">Product Name</label>
+          <input type="text" id="pName" required />
+        </div>
+        <div>
+          <label for="pSku">SKU/ID</label>
+          <input type="text" id="pSku" placeholder="Auto-generate or type" />
+        </div>
+        <div>
+          <label for="pPurchasePrice">Purchase Price (VAT incl.)</label>
+          <input type="number" id="pPurchasePrice" step="0.01" required />
+        </div>
+        <div>
+          <label for="pStock">Current Stock Qty</label>
+          <input type="number" id="pStock" step="1" required />
+        </div>
+        <div>
+          <label for="pReorderThreshold">Reorder Threshold</label>
+          <input type="number" id="pReorderThreshold" step="1" />
+        </div>
+        <div>
+          <label for="pReorderQty">Reorder Quantity</label>
+          <input type="number" id="pReorderQty" step="1" />
+        </div>
+
+        <div>
+          <label for="pCategory">Category</label>
+          <input type="text" id="pCategory" placeholder="Enter any category" />
+        </div>
+        <div>
+          <label for="pStatus">Status (multi-select)</label>
+          <select id="pStatus" multiple size="4">
+            <option value="Available on Website">Available on Website</option>
+            <option value="Available on TikTok">Available on TikTok</option>
+            <option value="Needs Processing">Needs Processing</option>
+            <option value="Out of Stock">Out of Stock</option>
+          </select>
+        </div>
+        <div>
+          <label for="pSupplier">Supplier</label>
+          <input type="text" id="pSupplier" />
+        </div>
+        <div>
+          <label for="pLocation">Location</label>
+          <input type="text" id="pLocation" placeholder="Warehouse A, Shelf 3, etc." />
+        </div>
+        <div>
+          <label for="pImage">Product Image</label>
+          <input type="file" id="pImage" accept="image/*" />
+        </div>
+        <div class="full-span">
+          <label for="pDescription">Product Description</label>
+          <textarea id="pDescription" rows="3"></textarea>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" class="close-btn" id="closeModal">Cancel</button>
+          <button type="submit" id="saveProductBtn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+  /*********************************************************************
+   * 1. STATE & DATA
+   *********************************************************************/
+  const LS_KEY = 'fidgetToyInventoryData';
+  let inventoryData = [];
+  let dailyBackupKey = 'fidgetToyInventoryBackup_';
+  let autoSaveInterval;
+
+  document.addEventListener('DOMContentLoaded', initApp);
+
+  function initApp() {
+    // 1) Load data
+    loadData();
+
+    // 2) Initial UI
+    switchSection('dashboard');
+    renderInventoryTable();
+    updateDashboard();
+
+    // 3) Autosave every 30s
+    autoSaveInterval = setInterval(saveData, 30000);
+
+    // 4) Daily backup
+    dailyBackup();
+
+    // 5) Bind events
+    bindEvents();
+
+    // 6) Chart placeholders
+    initCharts();
+  }
+
+  /*********************************************************************
+   * 2. LOAD & SAVE
+   *********************************************************************/
+  function loadData() {
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved) {
+      try {
+        inventoryData = JSON.parse(saved) || [];
+      } catch(e) {
+        console.error('Error loading data:', e);
+        inventoryData = [];
+      }
+    }
+  }
+
+  function saveData() {
+    localStorage.setItem(LS_KEY, JSON.stringify(inventoryData));
+  }
+
+  function dailyBackup() {
+    const today = new Date().toISOString().slice(0,10);
+    const backupName = dailyBackupKey + today;
+    if (!localStorage.getItem(backupName)) {
+      localStorage.setItem(backupName, JSON.stringify(inventoryData));
+      console.log('Daily backup created:', backupName);
+    }
+  }
+
+  /*********************************************************************
+   * 3. EVENTS & NAV
+   *********************************************************************/
+  function bindEvents() {
+    // Hamburger (toggle sidebar on mobile)
+    document.getElementById('hamburgerBtn').addEventListener('click', () => {
+      document.getElementById('sidebarMenu').classList.toggle('show');
+    });
+
+    // Navigation
+    document.getElementById('navDashboard').addEventListener('click', () => {
+      switchSection('dashboard');
+      document.getElementById('sidebarMenu').classList.remove('show');
+    });
+    document.getElementById('navInventory').addEventListener('click', () => {
+      switchSection('inventory');
+      document.getElementById('sidebarMenu').classList.remove('show');
+    });
+    document.getElementById('navProductDetail').addEventListener('click', () => {
+      switchSection('productDetail');
+      document.getElementById('sidebarMenu').classList.remove('show');
+    });
+
+    // Quick add
+    document.getElementById('quickAddBtn').addEventListener('click', openModal);
+
+    // Export CSV
+    document.getElementById('exportCsv').addEventListener('click', exportCsv);
+
+    // Import placeholder
+    document.getElementById('importData').addEventListener('click', () => {
+      alert('Import placeholder. Use SheetJS or CSV parser for real implementation.');
+    });
+
+    // Modal form
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    document.getElementById('productForm').addEventListener('submit', handleFormSubmit);
+
+    // Inventory toolbar
+    document.getElementById('btnViewGrid').addEventListener('click', () => {
+      alert('Grid view placeholder - transform table to cards if desired.');
+    });
+    document.getElementById('btnViewTable').addEventListener('click', () => {
+      alert('Already in table view.');
+    });
+    document.getElementById('batchUpdateBtn').addEventListener('click', () => {
+      alert('Batch update placeholder.');
+    });
+  }
+
+  function switchSection(sectionName) {
+    document.getElementById('dashboardSection').style.display = 'none';
+    document.getElementById('inventorySection').style.display = 'none';
+    document.getElementById('productDetailSection').style.display = 'none';
+
+    if (sectionName === 'dashboard') {
+      document.getElementById('dashboardSection').style.display = 'block';
+      document.getElementById('breadcrumbCurrent').textContent = 'Dashboard';
+    } else if (sectionName === 'inventory') {
+      document.getElementById('inventorySection').style.display = 'block';
+      document.getElementById('breadcrumbCurrent').textContent = 'Inventory';
+    } else if (sectionName === 'productDetail') {
+      document.getElementById('productDetailSection').style.display = 'block';
+      document.getElementById('breadcrumbCurrent').textContent = 'Product Detail';
+    }
+  }
+
+  /*********************************************************************
+   * 4. INVENTORY
+   *********************************************************************/
+  function createProductObj({
+    name, sku, purchasePrice, stock, reorderThreshold,
+    reorderQty, category, status, supplier, location, imageData, description
+  }) {
+    const dateAdded = new Date().toISOString().slice(0,10);
+    const sellingPrice = calcSellingPrice(purchasePrice);
+
+    return {
+      id: crypto.randomUUID(),
+      name,
+      sku: sku || generateSku(),
+      purchasePrice: Number(purchasePrice),
+      sellingPrice,
+      stock: Number(stock),
+      reorderThreshold: Number(reorderThreshold) || 0,
+      reorderQty: Number(reorderQty) || 0,
+      category,
+      status, 
+      supplier,
+      location,
+      imageData,
+      description,
+      dateAdded
+    };
+  }
+
+  function generateSku() {
+    return 'SKU-' + Math.floor(Math.random() * 100000);
+  }
+
+  function calcSellingPrice(purchasePrice) {
+    // purchasePrice * 2 + 10% of purchasePrice
+    return ((purchasePrice * 2) + (purchasePrice * 0.1)).toFixed(2);
+  }
+
+  function addProduct(productObj) {
+    inventoryData.push(productObj);
+    renderInventoryTable();
+    updateDashboard();
+    saveData();
+  }
+
+  /*********************************************************************
+   * 5. RENDER
+   *********************************************************************/
+  function renderInventoryTable() {
+    const tbody = document.querySelector('#inventoryTable tbody');
+    tbody.innerHTML = '';
+
+    inventoryData.forEach(product => {
+      const tr = document.createElement('tr');
+
+      // Image
+      const imgTd = document.createElement('td');
+      const img = document.createElement('img');
+      img.src = product.imageData
+        ? product.imageData
+        : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+      imgTd.appendChild(img);
+      tr.appendChild(imgTd);
+
+      // Name
+      const nameTd = document.createElement('td');
+      nameTd.textContent = product.name;
+      tr.appendChild(nameTd);
+
+      // SKU
+      const skuTd = document.createElement('td');
+      skuTd.textContent = product.sku;
+      tr.appendChild(skuTd);
+
+      // Purchase Price
+      const purchaseTd = document.createElement('td');
+      purchaseTd.textContent = '£' + product.purchasePrice.toFixed(2);
+      tr.appendChild(purchaseTd);
+
+      // Selling Price
+      const sellingTd = document.createElement('td');
+      sellingTd.textContent = '£' + product.sellingPrice;
+      tr.appendChild(sellingTd);
+
+      // Stock
+      const stockTd = document.createElement('td');
+      stockTd.textContent = product.stock;
+      tr.appendChild(stockTd);
+
+      // Category
+      const catTd = document.createElement('td');
+      catTd.textContent = product.category;
+      tr.appendChild(catTd);
+
+      // Status
+      const statusTd = document.createElement('td');
+      statusTd.textContent = (product.status || []).join(', ');
+      tr.appendChild(statusTd);
+
+      // Supplier
+      const suppTd = document.createElement('td');
+      suppTd.textContent = product.supplier;
+      tr.appendChild(suppTd);
+
+      // Date
+      const dateTd = document.createElement('td');
+      dateTd.textContent = product.dateAdded;
+      tr.appendChild(dateTd);
+
+      // Location
+      const locTd = document.createElement('td');
+      locTd.textContent = product.location || '';
+      tr.appendChild(locTd);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function updateDashboard() {
+    document.getElementById('totalItems').textContent = inventoryData.length;
+
+    let totalVal = 0;
+    let lowStock = 0;
+    inventoryData.forEach(p => {
+      totalVal += p.purchasePrice * p.stock;
+      if (p.stock <= p.reorderThreshold) {
+        lowStock++;
+      }
+    });
+    document.getElementById('totalValue').textContent = '£' + totalVal.toFixed(2);
+    document.getElementById('lowStockCount').textContent = lowStock;
+  }
+
+  /*********************************************************************
+   * 6. MODAL FORM
+   *********************************************************************/
+  function openModal() {
+    document.getElementById('productModalOverlay').style.display = 'flex';
+    document.getElementById('modalTitle').textContent = 'Add Product';
+    document.getElementById('productForm').reset();
+  }
+
+  function closeModal() {
+    document.getElementById('productModalOverlay').style.display = 'none';
+  }
+
+  function handleFormSubmit(e) {
+    e.preventDefault();
+    // Gather data
+    const name = document.getElementById('pName').value.trim();
+    const sku = document.getElementById('pSku').value.trim();
+    const purchasePrice = document.getElementById('pPurchasePrice').value;
+    const stock = document.getElementById('pStock').value;
+    const reorderThreshold = document.getElementById('pReorderThreshold').value;
+    const reorderQty = document.getElementById('pReorderQty').value;
+    const category = document.getElementById('pCategory').value.trim();
+    const statusOptions = Array.from(document.getElementById('pStatus').selectedOptions).map(opt => opt.value);
+    const supplier = document.getElementById('pSupplier').value.trim();
+    const location = document.getElementById('pLocation').value.trim();
+    const description = document.getElementById('pDescription').value;
+
+    // Image handling
+    const imageFile = document.getElementById('pImage').files[0];
+    if (imageFile) {
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        finalizeAdd({
+          name, sku, purchasePrice, stock, reorderThreshold, reorderQty,
+          category, status: statusOptions, supplier, location, 
+          imageData: ev.target.result,
+          description
+        });
+      };
+      reader.readAsDataURL(imageFile);
+    } else {
+      finalizeAdd({
+        name, sku, purchasePrice, stock, reorderThreshold, reorderQty,
+        category, status: statusOptions, supplier, location, imageData: '',
+        description
+      });
+    }
+  }
+
+  function finalizeAdd(formData) {
+    const productObj = createProductObj(formData);
+    addProduct(productObj);
+    closeModal();
+  }
+
+  /*********************************************************************
+   * 7. EXPORT / IMPORT
+   *********************************************************************/
+  function exportCsv() {
+    if (!inventoryData.length) {
+      alert('No products to export.');
+      return;
+    }
+    let csvContent = 'data:text/csv;charset=utf-8,';
+    csvContent += [
+      'Product Name','SKU','Purchase Price','Selling Price','Stock',
+      'Category','Status','Supplier','Date Added','Location'
+    ].join(',') + '\n';
+
+    inventoryData.forEach((p) => {
+      let row = [
+        p.name,
+        p.sku,
+        p.purchasePrice,
+        p.sellingPrice,
+        p.stock,
+        p.category,
+        (p.status || []).join('|'),
+        p.supplier,
+        p.dateAdded,
+        p.location
+      ];
+      csvContent += row.join(',') + '\n';
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'fidget_inventory_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  /*********************************************************************
+   * 8. CHART PLACEHOLDER
+   *********************************************************************/
+  function initCharts() {
+    if (typeof Chart === 'undefined') {
+      console.warn('Chart.js not available. Placeholder only.');
+      return;
+    }
+    // e.g. new Chart(document.getElementById('chartByCategory'), {...});
+  }
+  </script>
+</body>
+</html>
