@@ -5,11 +5,11 @@
   <title>cookiemonster inventory</title>
   <!-- 
     Single-page HTML 
-    ----------------
-    - Large text for visibility.
-    - Quick Add form includes Category, Status, Supplier.
-    - Full Add form for advanced fields (thresholds, images, etc.).
-    - Local storage, daily backup, CSV export, etc.
+    Enhanced with:
+    - Grid View toggle
+    - Batch Update with checkboxes
+    - Clickable dashboard card leads to Inventory
+    - Delete & Update per row (opens full form for update)
   -->
   <style>
     /* ==============================
@@ -21,7 +21,7 @@
       box-sizing: border-box;
     }
     :root {
-      --base-font-size: 24px;  /* Large font for visibility */
+      --base-font-size: 24px;  
       --line-height-base: 1.7;
 
       --color-primary: #FF6B6B;   
@@ -212,6 +212,10 @@
       flex: 1;
       min-width: 160px;
       padding: 1rem;
+      cursor: pointer; /* clickable */
+    }
+    .dashboard__card:hover {
+      background-color: #ffe;
     }
     .dashboard__card h3 {
       font-size: 1.1em;
@@ -252,12 +256,15 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    .inventory__list {
+
+    /* TABLE VIEW */
+    .inventory__table-view {
       background: #fff;
       border-radius: 8px;
       padding: 1rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       overflow-x: auto;
+      display: block; 
     }
     table.inventory-table {
       width: 100%;
@@ -282,6 +289,55 @@
       height: 60px;
       object-fit: cover;
       border-radius: 4px;
+    }
+
+    /* GRID VIEW */
+    .inventory__grid-view {
+      display: none;
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+    .grid-item {
+      background: #fdfdfd;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      position: relative;
+    }
+    .grid-item img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+    .grid-item h4 {
+      font-size: 1em;
+      margin-bottom: 0.2rem;
+    }
+    .grid-item .actions {
+      margin-top: auto; 
+      display: flex;
+      gap: 0.5rem;
+    }
+    .grid-item .actions button {
+      font-size: 0.9em;
+      background-color: var(--color-primary);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
     }
 
     /* ==============================
@@ -321,7 +377,7 @@
       max-width: 95%;
       max-height: 90%;
       padding: 1rem;
-      overflow-y: auto; /* Scroll if form is tall */
+      overflow-y: auto; 
     }
     .modal h2 {
       margin-bottom: 1rem;
@@ -371,15 +427,8 @@
     .close-btn {
       background-color: #777;
     }
-
-    /* Quick Add form smaller columns or single column if you want. 
-       We'll still do 2 columns but smaller. */
-    .quick-add-form label {
-      font-size: 1em;
-      margin-bottom: 0.2rem;
-    }
-    .quick-add-form {
-      grid-template-columns: 1fr; /* Single column for smaller form */
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
@@ -387,7 +436,6 @@
 <body>
   <!-- HEADER -->
   <header>
-    <!-- LOGO + TITLE -->
     <div class="header__logo">
       <img 
         src="https://i.ibb.co/y22pQJt/Colorful-Turtle-Swimming-Club-Free-Logo.png" 
@@ -396,14 +444,12 @@
       cookiemonster inventory
     </div>
     <div class="header__actions">
-      <!-- Hamburger (mobile) -->
       <div class="hamburger" id="hamburgerBtn">
         <span></span>
         <span></span>
         <span></span>
       </div>
       <input type="search" placeholder="Search..." id="globalSearch" />
-      <!-- Quick Add triggers the smaller modal -->
       <button id="quickAddBtn">Quick Add</button>
     </div>
   </header>
@@ -421,7 +467,6 @@
       <ul>
         <li><a id="exportCsv">Export CSV</a></li>
         <li><a id="importData">Import Data</a></li>
-        <!-- Link to open the Full Add modal below -->
         <li><a id="fullAddLink">Full Add Form</a></li>
       </ul>
     </nav>
@@ -436,11 +481,11 @@
       <!-- DASHBOARD SECTION -->
       <section class="dashboard" id="dashboardSection">
         <div class="dashboard__cards">
-          <div class="dashboard__card">
+          <div class="dashboard__card" id="cardTotalValue">
             <h3>Total Inventory Value</h3>
             <p id="totalValue">£0.00</p>
           </div>
-          <div class="dashboard__card">
+          <div class="dashboard__card" id="cardTotalItems">
             <h3>Total Items</h3>
             <p id="totalItems">0</p>
           </div>
@@ -466,10 +511,13 @@
           <button id="btnViewTable">Table View</button>
           <button id="batchUpdateBtn">Batch Update</button>
         </div>
-        <div class="inventory__list">
+
+        <!-- TABLE VIEW -->
+        <div class="inventory__table-view" id="tableViewContainer">
           <table class="inventory-table" id="inventoryTable">
             <thead>
               <tr>
+                <th><input type="checkbox" id="checkAll"/></th>
                 <th>Image</th>
                 <th>Product Name</th>
                 <th>SKU</th>
@@ -481,12 +529,20 @@
                 <th>Supplier</th>
                 <th>Date Added</th>
                 <th>Location</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               <!-- Populated via JS -->
             </tbody>
           </table>
+        </div>
+
+        <!-- GRID VIEW -->
+        <div class="inventory__grid-view" id="gridViewContainer">
+          <div class="grid-container" id="gridContainer">
+            <!-- Grid items via JS -->
+          </div>
         </div>
       </section>
 
@@ -500,12 +556,11 @@
     </main>
   </div>
 
-  <!-- QUICK ADD MODAL (SMALLER FORM) -->
+  <!-- QUICK ADD MODAL -->
   <div class="modal-overlay" id="quickAddModalOverlay">
     <div class="modal">
       <h2>Quick Add Product</h2>
-      <!-- Minimal fields but includes Category, Status, Supplier now -->
-      <form id="quickAddForm" class="quick-add-form">
+      <form id="quickAddForm" class="quick-add-form" style="grid-template-columns: 1fr;">
         <label for="qName">Product Name</label>
         <input type="text" id="qName" required />
 
@@ -518,7 +573,6 @@
         <label for="qCategory">Category</label>
         <input type="text" id="qCategory" placeholder="e.g. Putty, Spinner..." />
 
-        <!-- Simple multi-select for Status with same options -->
         <label for="qStatus">Status (multi-select)</label>
         <select id="qStatus" multiple size="4">
           <option value="Available on Website">Available on Website</option>
@@ -541,7 +595,7 @@
     </div>
   </div>
 
-  <!-- FULL ADD MODAL (the big form) -->
+  <!-- FULL ADD/EDIT MODAL -->
   <div class="modal-overlay" id="fullAddModalOverlay">
     <div class="modal">
       <h2 id="modalTitle">Full Add Product</h2>
@@ -608,6 +662,21 @@
     </div>
   </div>
 
+  <!-- BATCH UPDATE MODAL (demo) -->
+  <div class="modal-overlay" id="batchUpdateModalOverlay">
+    <div class="modal">
+      <h2>Batch Update</h2>
+      <form id="batchUpdateForm" style="grid-template-columns: 1fr;">
+        <label for="batchCategory">Change Category for selected</label>
+        <input type="text" id="batchCategory" placeholder="e.g. Clearance" />
+        <div class="modal-buttons">
+          <button type="button" class="close-btn" id="closeBatchUpdate">Cancel</button>
+          <button type="submit">Apply</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
   /*********************************************************************
    * 1. STATE & DATA
@@ -617,27 +686,24 @@
   let dailyBackupKey = 'fidgetToyInventoryBackup_';
   let autoSaveInterval;
 
+  // Track edit mode (if we're editing an existing product)
+  let editMode = false;
+  let editProductId = null; // which product are we editing?
+
   document.addEventListener('DOMContentLoaded', initApp);
 
   function initApp() {
-    // 1) Load data
     loadData();
-    // 2) Show dashboard by default
     switchSection('dashboard');
-    renderInventoryTable();
-    updateDashboard();
-    // 3) Autosave every 30s
+    renderAllViews();
     autoSaveInterval = setInterval(saveData, 30000);
-    // 4) Daily backup
     dailyBackup();
-    // 5) Bind events
     bindEvents();
-    // 6) Chart placeholders
     initCharts();
   }
 
   /*********************************************************************
-   * 2. LOAD & SAVE
+   * 2. LOADING & SAVING
    *********************************************************************/
   function loadData() {
     const saved = localStorage.getItem(LS_KEY);
@@ -650,11 +716,9 @@
       }
     }
   }
-
   function saveData() {
     localStorage.setItem(LS_KEY, JSON.stringify(inventoryData));
   }
-
   function dailyBackup() {
     const today = new Date().toISOString().slice(0,10);
     const backupName = dailyBackupKey + today;
@@ -668,12 +732,12 @@
    * 3. EVENTS & NAV
    *********************************************************************/
   function bindEvents() {
-    // Hamburger (mobile)
+    // Hamburger
     document.getElementById('hamburgerBtn').addEventListener('click', () => {
       document.getElementById('sidebarMenu').classList.toggle('show');
     });
 
-    // Sidebar navigation
+    // Nav
     document.getElementById('navDashboard').addEventListener('click', () => {
       switchSection('dashboard');
       document.getElementById('sidebarMenu').classList.remove('show');
@@ -692,33 +756,47 @@
     document.getElementById('importData').addEventListener('click', () => {
       alert('Import placeholder. Use SheetJS or CSV parser for real implementation.');
     });
-
-    // Full Add link
     document.getElementById('fullAddLink').addEventListener('click', () => {
-      openFullAddModal();
+      openFullAddModal(); 
       document.getElementById('sidebarMenu').classList.remove('show');
     });
 
-    // Quick Add button
+    // Quick Add
     document.getElementById('quickAddBtn').addEventListener('click', openQuickAddModal);
-
-    // Quick Add form
     document.getElementById('closeQuickAdd').addEventListener('click', closeQuickAddModal);
     document.getElementById('quickAddForm').addEventListener('submit', handleQuickAddSubmit);
 
-    // Full Add form
+    // Full Add
     document.getElementById('closeFullAdd').addEventListener('click', closeFullAddModal);
     document.getElementById('fullAddForm').addEventListener('submit', handleFullAddSubmit);
 
-    // Inventory toolbar
+    // Inventory
     document.getElementById('btnViewGrid').addEventListener('click', () => {
-      alert('Grid view placeholder.');
+      showGridView(true);
     });
     document.getElementById('btnViewTable').addEventListener('click', () => {
-      alert('Already in table view.');
+      showGridView(false);
     });
-    document.getElementById('batchUpdateBtn').addEventListener('click', () => {
-      alert('Batch update placeholder.');
+    document.getElementById('batchUpdateBtn').addEventListener('click', openBatchUpdateModal);
+
+    // CheckAll for batch update
+    document.getElementById('checkAll').addEventListener('change', (e) => {
+      const checkboxes = document.querySelectorAll('.row-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = e.target.checked;
+      });
+    });
+
+    // Batch Update modal
+    document.getElementById('closeBatchUpdate').addEventListener('click', closeBatchUpdateModal);
+    document.getElementById('batchUpdateForm').addEventListener('submit', handleBatchUpdate);
+
+    // Dashboard card clicks
+    document.getElementById('cardTotalItems').addEventListener('click', () => {
+      switchSection('inventory');
+    });
+    document.getElementById('cardTotalValue').addEventListener('click', () => {
+      switchSection('inventory');
     });
   }
 
@@ -740,9 +818,10 @@
   }
 
   /*********************************************************************
-   * 4. INVENTORY LOGIC
+   * 4. CORE INVENTORY LOGIC
    *********************************************************************/
   function createProductObj({
+    id=null,
     name,
     sku,
     purchasePrice,
@@ -759,9 +838,8 @@
     const dateAdded = new Date().toISOString().slice(0,10);
     const purPrice = Number(purchasePrice) || 0;
     const sellingPrice = calcSellingPrice(purPrice);
-
     return {
-      id: crypto.randomUUID(),
+      id: id || crypto.randomUUID(),
       name: name || 'Unnamed',
       sku: sku || generateSku(),
       purchasePrice: purPrice,
@@ -778,32 +856,59 @@
       dateAdded
     };
   }
-
   function generateSku() {
     return 'SKU-' + Math.floor(Math.random() * 100000);
   }
-
   function calcSellingPrice(price) {
-    // purchasePrice * 2 + 10% of purchasePrice
     return ((price * 2) + (price * 0.1)).toFixed(2);
   }
-
   function addProduct(productObj) {
     inventoryData.push(productObj);
-    renderInventoryTable();
-    updateDashboard();
+    renderAllViews();
     saveData();
+  }
+  function updateProduct(updatedObj) {
+    const index = inventoryData.findIndex(p => p.id === updatedObj.id);
+    if (index !== -1) {
+      // keep the original dateAdded
+      updatedObj.dateAdded = inventoryData[index].dateAdded; 
+      inventoryData[index] = updatedObj;
+      renderAllViews();
+      saveData();
+    }
+  }
+  function deleteProduct(productId) {
+    const index = inventoryData.findIndex(p => p.id === productId);
+    if (index !== -1) {
+      inventoryData.splice(index, 1);
+      renderAllViews();
+      saveData();
+    }
   }
 
   /*********************************************************************
-   * 5. RENDERING
+   * 5. RENDERING (TABLE / GRID / DASHBOARD)
    *********************************************************************/
+  function renderAllViews() {
+    renderInventoryTable();
+    renderInventoryGrid();
+    updateDashboard();
+  }
+
   function renderInventoryTable() {
     const tbody = document.querySelector('#inventoryTable tbody');
     tbody.innerHTML = '';
 
-    inventoryData.forEach(product => {
+    inventoryData.forEach((product) => {
       const tr = document.createElement('tr');
+      // Checkbox for batch
+      const cbTd = document.createElement('td');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.classList.add('row-checkbox');
+      cb.value = product.id;
+      cbTd.appendChild(cb);
+      tr.appendChild(cbTd);
 
       // Image
       const imgTd = document.createElement('td');
@@ -864,8 +969,98 @@
       locTd.textContent = product.location;
       tr.appendChild(locTd);
 
+      // Actions
+      const actionTd = document.createElement('td');
+      const btnEdit = document.createElement('button');
+      btnEdit.textContent = 'Update';
+      btnEdit.style.marginRight = '4px';
+      btnEdit.onclick = () => {
+        openEditProduct(product);
+      };
+      const btnDel = document.createElement('button');
+      btnDel.textContent = 'Delete';
+      btnDel.onclick = () => {
+        if (confirm('Are you sure you want to delete this product?')) {
+          deleteProduct(product.id);
+        }
+      };
+      actionTd.appendChild(btnEdit);
+      actionTd.appendChild(btnDel);
+      tr.appendChild(actionTd);
+
       tbody.appendChild(tr);
     });
+  }
+
+  function renderInventoryGrid() {
+    const gridContainer = document.getElementById('gridContainer');
+    gridContainer.innerHTML = '';
+
+    inventoryData.forEach((product) => {
+      const itemDiv = document.createElement('div');
+      itemDiv.classList.add('grid-item');
+
+      const img = document.createElement('img');
+      img.src = product.imageData
+        ? product.imageData
+        : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+      itemDiv.appendChild(img);
+
+      const title = document.createElement('h4');
+      title.textContent = product.name;
+      itemDiv.appendChild(title);
+
+      const details = document.createElement('p');
+      details.textContent = `SKU: ${product.sku}`;
+      itemDiv.appendChild(details);
+
+      const priceLine = document.createElement('p');
+      priceLine.textContent = `£${product.purchasePrice.toFixed(2)} -> £${product.sellingPrice}`;
+      itemDiv.appendChild(priceLine);
+
+      const stockLine = document.createElement('p');
+      stockLine.textContent = `Stock: ${product.stock}`;
+      itemDiv.appendChild(stockLine);
+
+      const catLine = document.createElement('p');
+      catLine.textContent = `Category: ${product.category}`;
+      itemDiv.appendChild(catLine);
+
+      // Actions
+      const actionsDiv = document.createElement('div');
+      actionsDiv.classList.add('actions');
+
+      const editBtn = document.createElement('button');
+      editBtn.textContent = 'Update';
+      editBtn.onclick = () => {
+        openEditProduct(product);
+      };
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete';
+      delBtn.onclick = () => {
+        if (confirm('Are you sure you want to delete this product?')) {
+          deleteProduct(product.id);
+        }
+      };
+      actionsDiv.appendChild(editBtn);
+      actionsDiv.appendChild(delBtn);
+
+      itemDiv.appendChild(actionsDiv);
+
+      gridContainer.appendChild(itemDiv);
+    });
+  }
+
+  function showGridView(enableGrid) {
+    const tableView = document.getElementById('tableViewContainer');
+    const gridView = document.getElementById('gridViewContainer');
+    if (enableGrid) {
+      tableView.classList.add('hidden');
+      gridView.classList.remove('hidden');
+    } else {
+      tableView.classList.remove('hidden');
+      gridView.classList.add('hidden');
+    }
   }
 
   function updateDashboard() {
@@ -884,7 +1079,7 @@
   }
 
   /*********************************************************************
-   * 6. QUICK ADD MODAL
+   * 6. QUICK ADD
    *********************************************************************/
   function openQuickAddModal() {
     document.getElementById('quickAddModalOverlay').style.display = 'flex';
@@ -893,17 +1088,14 @@
   function closeQuickAddModal() {
     document.getElementById('quickAddModalOverlay').style.display = 'none';
   }
-
   function handleQuickAddSubmit(e) {
     e.preventDefault();
-    // Gather quick fields
     const name = document.getElementById('qName').value.trim();
     const purchasePrice = document.getElementById('qPurchasePrice').value;
     const stock = document.getElementById('qStock').value;
     const category = document.getElementById('qCategory').value.trim();
     const supplier = document.getElementById('qSupplier').value.trim();
     const location = document.getElementById('qLocation').value.trim();
-    // Status array from multi-select
     const statusArr = Array.from(document.getElementById('qStatus').selectedOptions).map(o => o.value);
 
     const productObj = createProductObj({
@@ -920,9 +1112,12 @@
   }
 
   /*********************************************************************
-   * 7. FULL ADD MODAL
+   * 7. FULL ADD (or EDIT)
    *********************************************************************/
   function openFullAddModal() {
+    editMode = false;
+    editProductId = null;
+    document.getElementById('modalTitle').textContent = 'Full Add Product';
     document.getElementById('fullAddModalOverlay').style.display = 'flex';
     document.getElementById('fullAddForm').reset();
   }
@@ -930,8 +1125,38 @@
     document.getElementById('fullAddModalOverlay').style.display = 'none';
   }
 
+  // If user clicks "Update" in table/grid, we open full form in "edit mode"
+  function openEditProduct(product) {
+    editMode = true;
+    editProductId = product.id;
+    // Fill form
+    document.getElementById('modalTitle').textContent = 'Update Product';
+    document.getElementById('pName').value = product.name;
+    document.getElementById('pSku').value = product.sku;
+    document.getElementById('pPurchasePrice').value = product.purchasePrice;
+    document.getElementById('pStock').value = product.stock;
+    document.getElementById('pReorderThreshold').value = product.reorderThreshold;
+    document.getElementById('pReorderQty').value = product.reorderQty;
+    document.getElementById('pCategory').value = product.category;
+    
+    // multi-select status
+    const statusSelect = document.getElementById('pStatus');
+    Array.from(statusSelect.options).forEach(opt => {
+      opt.selected = product.status.includes(opt.value);
+    });
+    document.getElementById('pSupplier').value = product.supplier;
+    document.getElementById('pLocation').value = product.location;
+    document.getElementById('pDescription').value = product.description;
+
+    // Note: We'll skip image for editing (no preview). If you want to override, user picks new file.
+
+    // Show modal
+    document.getElementById('fullAddModalOverlay').style.display = 'flex';
+  }
+
   function handleFullAddSubmit(e) {
     e.preventDefault();
+    // Gather
     const name = document.getElementById('pName').value.trim();
     const sku = document.getElementById('pSku').value.trim();
     const purchasePrice = document.getElementById('pPurchasePrice').value;
@@ -944,7 +1169,6 @@
     const location = document.getElementById('pLocation').value.trim();
     const description = document.getElementById('pDescription').value;
 
-    // Handle image
     const imageFile = document.getElementById('pImage').files[0];
     if (imageFile) {
       const reader = new FileReader();
@@ -959,20 +1183,64 @@
     } else {
       finalizeFullAdd({
         name, sku, purchasePrice, stock, reorderThreshold, reorderQty,
-        category, status: statusArr, supplier, location, 
-        imageData: '', description
+        category, status: statusArr, supplier, location, imageData:'', description
       });
     }
   }
 
   function finalizeFullAdd(data) {
-    const productObj = createProductObj(data);
-    addProduct(productObj);
+    if (!editMode) {
+      // Adding new
+      const productObj = createProductObj(data);
+      addProduct(productObj);
+    } else {
+      // Updating existing
+      data.id = editProductId; 
+      const updatedObj = createProductObj(data);
+      updateProduct(updatedObj);
+    }
     closeFullAddModal();
   }
 
   /*********************************************************************
-   * 8. EXPORT / IMPORT
+   * 8. BATCH UPDATE
+   *********************************************************************/
+  function openBatchUpdateModal() {
+    // Check if any row is selected
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    if (checkboxes.length === 0) {
+      alert('No items selected for batch update.');
+      return;
+    }
+    document.getElementById('batchUpdateModalOverlay').style.display = 'flex';
+    document.getElementById('batchUpdateForm').reset();
+  }
+  function closeBatchUpdateModal() {
+    document.getElementById('batchUpdateModalOverlay').style.display = 'none';
+  }
+  function handleBatchUpdate(e) {
+    e.preventDefault();
+    const newCat = document.getElementById('batchCategory').value.trim();
+    if (!newCat) {
+      alert('Please enter a category for batch update.');
+      return;
+    }
+    // gather all checked row IDs
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    checkboxes.forEach(cb => {
+      const pid = cb.value;
+      const idx = inventoryData.findIndex(p => p.id === pid);
+      if (idx !== -1) {
+        inventoryData[idx].category = newCat;
+      }
+    });
+    renderAllViews();
+    saveData();
+    closeBatchUpdateModal();
+  }
+
+  /*********************************************************************
+   * 9. EXPORT CSV & CHARTS
    *********************************************************************/
   function exportCsv() {
     if (!inventoryData.length) {
@@ -1010,15 +1278,10 @@
     document.body.removeChild(link);
   }
 
-  /*********************************************************************
-   * 9. CHART PLACEHOLDER
-   *********************************************************************/
   function initCharts() {
     if (typeof Chart === 'undefined') {
       console.warn('Chart.js not available. Placeholder only.');
-      return;
     }
-    // e.g. new Chart(document.getElementById('chartByCategory'), { ... });
   }
   </script>
 </body>
