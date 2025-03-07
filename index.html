@@ -4,10 +4,12 @@
   <meta charset="UTF-8" />
   <title>cookiemonster inventory</title>
   <!-- 
-    Single-page HTML with:
-      - Large text for visibility.
-      - NEW smaller "Quick Add" modal for minimal data entry.
-      - Old "Full Add" form accessible from a sidebar link.
+    Single-page HTML 
+    ----------------
+    - Large text for visibility.
+    - Quick Add form includes Category, Status, Supplier.
+    - Full Add form for advanced fields (thresholds, images, etc.).
+    - Local storage, daily backup, CSV export, etc.
   -->
   <style>
     /* ==============================
@@ -370,10 +372,14 @@
       background-color: #777;
     }
 
-    /* Quick Add form smaller columns */
+    /* Quick Add form smaller columns or single column if you want. 
+       We'll still do 2 columns but smaller. */
     .quick-add-form label {
-      font-size: 1.1em;
+      font-size: 1em;
       margin-bottom: 0.2rem;
+    }
+    .quick-add-form {
+      grid-template-columns: 1fr; /* Single column for smaller form */
     }
   </style>
 </head>
@@ -498,25 +504,35 @@
   <div class="modal-overlay" id="quickAddModalOverlay">
     <div class="modal">
       <h2>Quick Add Product</h2>
-      <!-- Minimal fields -->
+      <!-- Minimal fields but includes Category, Status, Supplier now -->
       <form id="quickAddForm" class="quick-add-form">
-        <!-- Single column approach for smaller form -->
-        <div class="full-span">
-          <label for="qName">Product Name</label>
-          <input type="text" id="qName" required />
-        </div>
-        <div>
-          <label for="qPurchasePrice">Purchase Price</label>
-          <input type="number" id="qPurchasePrice" step="0.01" required />
-        </div>
-        <div>
-          <label for="qStock">Stock Qty</label>
-          <input type="number" id="qStock" step="1" required />
-        </div>
-        <div class="full-span">
-          <label for="qLocation">Location</label>
-          <input type="text" id="qLocation" placeholder="e.g. Shelf 3" />
-        </div>
+        <label for="qName">Product Name</label>
+        <input type="text" id="qName" required />
+
+        <label for="qPurchasePrice">Purchase Price</label>
+        <input type="number" id="qPurchasePrice" step="0.01" required />
+
+        <label for="qStock">Stock Qty</label>
+        <input type="number" id="qStock" step="1" required />
+
+        <label for="qCategory">Category</label>
+        <input type="text" id="qCategory" placeholder="e.g. Putty, Spinner..." />
+
+        <!-- Simple multi-select for Status with same options -->
+        <label for="qStatus">Status (multi-select)</label>
+        <select id="qStatus" multiple size="4">
+          <option value="Available on Website">Available on Website</option>
+          <option value="Available on TikTok">Available on TikTok</option>
+          <option value="Needs Processing">Needs Processing</option>
+          <option value="Out of Stock">Out of Stock</option>
+        </select>
+
+        <label for="qSupplier">Supplier</label>
+        <input type="text" id="qSupplier" placeholder="e.g. ABC Corp." />
+
+        <label for="qLocation">Location</label>
+        <input type="text" id="qLocation" placeholder="e.g. Shelf 3" />
+
         <div class="modal-buttons full-span">
           <button type="button" class="close-btn" id="closeQuickAdd">Cancel</button>
           <button type="submit">Add</button>
@@ -724,7 +740,7 @@
   }
 
   /*********************************************************************
-   * 4. INVENTORY MANAGEMENT
+   * 4. INVENTORY LOGIC
    *********************************************************************/
   function createProductObj({
     name,
@@ -732,22 +748,23 @@
     purchasePrice,
     stock,
     category,
+    status,
     supplier,
     location,
     description,
-    status,
     reorderThreshold,
     reorderQty,
     imageData
   }) {
     const dateAdded = new Date().toISOString().slice(0,10);
-    const sellingPrice = calcSellingPrice(Number(purchasePrice) || 0);
+    const purPrice = Number(purchasePrice) || 0;
+    const sellingPrice = calcSellingPrice(purPrice);
 
     return {
       id: crypto.randomUUID(),
-      name,
+      name: name || 'Unnamed',
       sku: sku || generateSku(),
-      purchasePrice: Number(purchasePrice),
+      purchasePrice: purPrice,
       sellingPrice,
       stock: Number(stock) || 0,
       reorderThreshold: Number(reorderThreshold) || 0,
@@ -766,9 +783,9 @@
     return 'SKU-' + Math.floor(Math.random() * 100000);
   }
 
-  function calcSellingPrice(purchasePrice) {
+  function calcSellingPrice(price) {
     // purchasePrice * 2 + 10% of purchasePrice
-    return ((purchasePrice * 2) + (purchasePrice * 0.1)).toFixed(2);
+    return ((price * 2) + (price * 0.1)).toFixed(2);
   }
 
   function addProduct(productObj) {
@@ -779,7 +796,7 @@
   }
 
   /*********************************************************************
-   * 5. RENDERING INVENTORY
+   * 5. RENDERING
    *********************************************************************/
   function renderInventoryTable() {
     const tbody = document.querySelector('#inventoryTable tbody');
@@ -857,7 +874,7 @@
     let totalVal = 0;
     let lowStock = 0;
     inventoryData.forEach(p => {
-      totalVal += (p.purchasePrice * p.stock);
+      totalVal += p.purchasePrice * p.stock;
       if (p.stock <= p.reorderThreshold) {
         lowStock++;
       }
@@ -876,17 +893,26 @@
   function closeQuickAddModal() {
     document.getElementById('quickAddModalOverlay').style.display = 'none';
   }
+
   function handleQuickAddSubmit(e) {
     e.preventDefault();
+    // Gather quick fields
     const name = document.getElementById('qName').value.trim();
     const purchasePrice = document.getElementById('qPurchasePrice').value;
     const stock = document.getElementById('qStock').value;
+    const category = document.getElementById('qCategory').value.trim();
+    const supplier = document.getElementById('qSupplier').value.trim();
     const location = document.getElementById('qLocation').value.trim();
+    // Status array from multi-select
+    const statusArr = Array.from(document.getElementById('qStatus').selectedOptions).map(o => o.value);
 
     const productObj = createProductObj({
-      name, 
-      purchasePrice, 
-      stock, 
+      name,
+      purchasePrice,
+      stock,
+      category,
+      status: statusArr,
+      supplier,
       location
     });
     addProduct(productObj);
@@ -903,6 +929,7 @@
   function closeFullAddModal() {
     document.getElementById('fullAddModalOverlay').style.display = 'none';
   }
+
   function handleFullAddSubmit(e) {
     e.preventDefault();
     const name = document.getElementById('pName').value.trim();
@@ -917,7 +944,7 @@
     const location = document.getElementById('pLocation').value.trim();
     const description = document.getElementById('pDescription').value;
 
-    // Image
+    // Handle image
     const imageFile = document.getElementById('pImage').files[0];
     if (imageFile) {
       const reader = new FileReader();
@@ -932,10 +959,12 @@
     } else {
       finalizeFullAdd({
         name, sku, purchasePrice, stock, reorderThreshold, reorderQty,
-        category, status: statusArr, supplier, location, imageData: '', description
+        category, status: statusArr, supplier, location, 
+        imageData: '', description
       });
     }
   }
+
   function finalizeFullAdd(data) {
     const productObj = createProductObj(data);
     addProduct(productObj);
