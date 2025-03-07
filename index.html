@@ -4,11 +4,10 @@
   <meta charset="UTF-8" />
   <title>cookiemonster inventory</title>
   <!-- 
-    Single-page HTML w/ Larger Text & Logo
-    --------------------------------------
-    - Base font size: 24px
-    - Line height: 1.7
-    - Logo image in header
+    Single-page HTML with:
+      - Large text for visibility.
+      - NEW smaller "Quick Add" modal for minimal data entry.
+      - Old "Full Add" form accessible from a sidebar link.
   -->
   <style>
     /* ==============================
@@ -20,14 +19,14 @@
       box-sizing: border-box;
     }
     :root {
-      --base-font-size: 24px;       /* Larger base font size */
-      --line-height-base: 1.7;      /* More generous line-height */
+      --base-font-size: 24px;  /* Large font for visibility */
+      --line-height-base: 1.7;
 
-      --color-primary: #FF6B6B;     /* bright coral */
-      --color-secondary: #4ECDC4;   /* turquoise */
-      --color-accent: #FFE66D;      /* light yellow */
-      --color-neutral: #F7FFF7;     /* off-white */
-      --color-dark: #1A535C;        /* dark teal */
+      --color-primary: #FF6B6B;   
+      --color-secondary: #4ECDC4; 
+      --color-accent: #FFE66D;    
+      --color-neutral: #F7FFF7;   
+      --color-dark: #1A535C;      
 
       --font-header: 'Poppins', sans-serif;
       --font-body: 'Open Sans', sans-serif;
@@ -58,7 +57,7 @@
     header {
       background: var(--color-dark);
       color: #fff;
-      height: 70px; /* slightly taller to fit bigger text & logo */
+      height: 70px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -69,14 +68,14 @@
     .header__logo {
       display: flex;
       align-items: center;
-      gap: 0.5rem; /* space between logo image & text */
+      gap: 0.5rem;
       font-family: var(--font-header);
-      font-size: 1.2em; /* scaled from base font size (24px) => ~28.8px text */
+      font-size: 1.2em;
       font-weight: bold;
       letter-spacing: 1px;
     }
     .header__logo img {
-      height: 50px; /* or tweak as desired */
+      height: 50px;
     }
     .header__actions {
       display: flex;
@@ -157,7 +156,7 @@
     @media (max-width: 768px) {
       nav.sidebar {
         position: absolute;
-        top: 70px; /* matches new header height */
+        top: 70px;
         left: 0;
         height: calc(100vh - 70px);
         transform: translateX(-100%);
@@ -256,7 +255,7 @@
       border-radius: 8px;
       padding: 1rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      overflow-x: auto; /* horizontal scroll if needed */
+      overflow-x: auto;
     }
     table.inventory-table {
       width: 100%;
@@ -300,7 +299,7 @@
     }
 
     /* ==============================
-       9. MODAL FORM
+       9. MODALS (SCROLLABLE)
        ============================== */
     .modal-overlay {
       position: fixed;
@@ -317,8 +316,10 @@
       background: #fff;
       border-radius: 8px;
       width: 600px;
-      max-width: 90%;
+      max-width: 95%;
+      max-height: 90%;
       padding: 1rem;
+      overflow-y: auto; /* Scroll if form is tall */
     }
     .modal h2 {
       margin-bottom: 1rem;
@@ -368,29 +369,35 @@
     .close-btn {
       background-color: #777;
     }
+
+    /* Quick Add form smaller columns */
+    .quick-add-form label {
+      font-size: 1.1em;
+      margin-bottom: 0.2rem;
+    }
   </style>
 </head>
-<body>
 
+<body>
   <!-- HEADER -->
   <header>
     <!-- LOGO + TITLE -->
     <div class="header__logo">
       <img 
         src="https://i.ibb.co/y22pQJt/Colorful-Turtle-Swimming-Club-Free-Logo.png" 
-        alt="Colorful Turtle Logo" 
+        alt="Colorful Turtle Logo"
       />
       cookiemonster inventory
     </div>
-
     <div class="header__actions">
-      <!-- Hamburger (for mobile) -->
+      <!-- Hamburger (mobile) -->
       <div class="hamburger" id="hamburgerBtn">
         <span></span>
         <span></span>
         <span></span>
       </div>
       <input type="search" placeholder="Search..." id="globalSearch" />
+      <!-- Quick Add triggers the smaller modal -->
       <button id="quickAddBtn">Quick Add</button>
     </div>
   </header>
@@ -408,6 +415,8 @@
       <ul>
         <li><a id="exportCsv">Export CSV</a></li>
         <li><a id="importData">Import Data</a></li>
+        <!-- Link to open the Full Add modal below -->
+        <li><a id="fullAddLink">Full Add Form</a></li>
       </ul>
     </nav>
 
@@ -485,11 +494,42 @@
     </main>
   </div>
 
-  <!-- MODAL (Add/Edit Product) -->
-  <div class="modal-overlay" id="productModalOverlay">
+  <!-- QUICK ADD MODAL (SMALLER FORM) -->
+  <div class="modal-overlay" id="quickAddModalOverlay">
     <div class="modal">
-      <h2 id="modalTitle">Add Product</h2>
-      <form id="productForm">
+      <h2>Quick Add Product</h2>
+      <!-- Minimal fields -->
+      <form id="quickAddForm" class="quick-add-form">
+        <!-- Single column approach for smaller form -->
+        <div class="full-span">
+          <label for="qName">Product Name</label>
+          <input type="text" id="qName" required />
+        </div>
+        <div>
+          <label for="qPurchasePrice">Purchase Price</label>
+          <input type="number" id="qPurchasePrice" step="0.01" required />
+        </div>
+        <div>
+          <label for="qStock">Stock Qty</label>
+          <input type="number" id="qStock" step="1" required />
+        </div>
+        <div class="full-span">
+          <label for="qLocation">Location</label>
+          <input type="text" id="qLocation" placeholder="e.g. Shelf 3" />
+        </div>
+        <div class="modal-buttons full-span">
+          <button type="button" class="close-btn" id="closeQuickAdd">Cancel</button>
+          <button type="submit">Add</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FULL ADD MODAL (the big form) -->
+  <div class="modal-overlay" id="fullAddModalOverlay">
+    <div class="modal">
+      <h2 id="modalTitle">Full Add Product</h2>
+      <form id="fullAddForm">
         <div>
           <label for="pName">Product Name</label>
           <input type="text" id="pName" required />
@@ -545,7 +585,7 @@
           <textarea id="pDescription" rows="3"></textarea>
         </div>
         <div class="modal-buttons">
-          <button type="button" class="close-btn" id="closeModal">Cancel</button>
+          <button type="button" class="close-btn" id="closeFullAdd">Cancel</button>
           <button type="submit" id="saveProductBtn">Save</button>
         </div>
       </form>
@@ -566,21 +606,16 @@
   function initApp() {
     // 1) Load data
     loadData();
-
-    // 2) Show dashboard
+    // 2) Show dashboard by default
     switchSection('dashboard');
     renderInventoryTable();
     updateDashboard();
-
     // 3) Autosave every 30s
     autoSaveInterval = setInterval(saveData, 30000);
-
     // 4) Daily backup
     dailyBackup();
-
     // 5) Bind events
     bindEvents();
-
     // 6) Chart placeholders
     initCharts();
   }
@@ -617,12 +652,12 @@
    * 3. EVENTS & NAV
    *********************************************************************/
   function bindEvents() {
-    // Hamburger for mobile
+    // Hamburger (mobile)
     document.getElementById('hamburgerBtn').addEventListener('click', () => {
       document.getElementById('sidebarMenu').classList.toggle('show');
     });
 
-    // Navigation
+    // Sidebar navigation
     document.getElementById('navDashboard').addEventListener('click', () => {
       switchSection('dashboard');
       document.getElementById('sidebarMenu').classList.remove('show');
@@ -636,24 +671,32 @@
       document.getElementById('sidebarMenu').classList.remove('show');
     });
 
-    // Quick add
-    document.getElementById('quickAddBtn').addEventListener('click', openModal);
-
-    // Export CSV
+    // Tools
     document.getElementById('exportCsv').addEventListener('click', exportCsv);
-
-    // Import placeholder
     document.getElementById('importData').addEventListener('click', () => {
       alert('Import placeholder. Use SheetJS or CSV parser for real implementation.');
     });
 
-    // Modal form
-    document.getElementById('closeModal').addEventListener('click', closeModal);
-    document.getElementById('productForm').addEventListener('submit', handleFormSubmit);
+    // Full Add link
+    document.getElementById('fullAddLink').addEventListener('click', () => {
+      openFullAddModal();
+      document.getElementById('sidebarMenu').classList.remove('show');
+    });
+
+    // Quick Add button
+    document.getElementById('quickAddBtn').addEventListener('click', openQuickAddModal);
+
+    // Quick Add form
+    document.getElementById('closeQuickAdd').addEventListener('click', closeQuickAddModal);
+    document.getElementById('quickAddForm').addEventListener('submit', handleQuickAddSubmit);
+
+    // Full Add form
+    document.getElementById('closeFullAdd').addEventListener('click', closeFullAddModal);
+    document.getElementById('fullAddForm').addEventListener('submit', handleFullAddSubmit);
 
     // Inventory toolbar
     document.getElementById('btnViewGrid').addEventListener('click', () => {
-      alert('Grid view placeholder - transform table to cards if desired.');
+      alert('Grid view placeholder.');
     });
     document.getElementById('btnViewTable').addEventListener('click', () => {
       alert('Already in table view.');
@@ -681,14 +724,24 @@
   }
 
   /*********************************************************************
-   * 4. INVENTORY
+   * 4. INVENTORY MANAGEMENT
    *********************************************************************/
   function createProductObj({
-    name, sku, purchasePrice, stock, reorderThreshold,
-    reorderQty, category, status, supplier, location, imageData, description
+    name,
+    sku,
+    purchasePrice,
+    stock,
+    category,
+    supplier,
+    location,
+    description,
+    status,
+    reorderThreshold,
+    reorderQty,
+    imageData
   }) {
     const dateAdded = new Date().toISOString().slice(0,10);
-    const sellingPrice = calcSellingPrice(purchasePrice);
+    const sellingPrice = calcSellingPrice(Number(purchasePrice) || 0);
 
     return {
       id: crypto.randomUUID(),
@@ -696,15 +749,15 @@
       sku: sku || generateSku(),
       purchasePrice: Number(purchasePrice),
       sellingPrice,
-      stock: Number(stock),
+      stock: Number(stock) || 0,
       reorderThreshold: Number(reorderThreshold) || 0,
       reorderQty: Number(reorderQty) || 0,
-      category,
-      status,
-      supplier,
-      location,
-      imageData,
-      description,
+      category: category || '',
+      status: status || [],
+      supplier: supplier || '',
+      location: location || '',
+      description: description || '',
+      imageData: imageData || '',
       dateAdded
     };
   }
@@ -726,7 +779,7 @@
   }
 
   /*********************************************************************
-   * 5. RENDER
+   * 5. RENDERING INVENTORY
    *********************************************************************/
   function renderInventoryTable() {
     const tbody = document.querySelector('#inventoryTable tbody');
@@ -791,7 +844,7 @@
 
       // Location
       const locTd = document.createElement('td');
-      locTd.textContent = product.location || '';
+      locTd.textContent = product.location;
       tr.appendChild(locTd);
 
       tbody.appendChild(tr);
@@ -804,7 +857,7 @@
     let totalVal = 0;
     let lowStock = 0;
     inventoryData.forEach(p => {
-      totalVal += p.purchasePrice * p.stock;
+      totalVal += (p.purchasePrice * p.stock);
       if (p.stock <= p.reorderThreshold) {
         lowStock++;
       }
@@ -814,21 +867,44 @@
   }
 
   /*********************************************************************
-   * 6. MODAL FORM
+   * 6. QUICK ADD MODAL
    *********************************************************************/
-  function openModal() {
-    document.getElementById('productModalOverlay').style.display = 'flex';
-    document.getElementById('modalTitle').textContent = 'Add Product';
-    document.getElementById('productForm').reset();
+  function openQuickAddModal() {
+    document.getElementById('quickAddModalOverlay').style.display = 'flex';
+    document.getElementById('quickAddForm').reset();
   }
-
-  function closeModal() {
-    document.getElementById('productModalOverlay').style.display = 'none';
+  function closeQuickAddModal() {
+    document.getElementById('quickAddModalOverlay').style.display = 'none';
   }
-
-  function handleFormSubmit(e) {
+  function handleQuickAddSubmit(e) {
     e.preventDefault();
-    // Gather data
+    const name = document.getElementById('qName').value.trim();
+    const purchasePrice = document.getElementById('qPurchasePrice').value;
+    const stock = document.getElementById('qStock').value;
+    const location = document.getElementById('qLocation').value.trim();
+
+    const productObj = createProductObj({
+      name, 
+      purchasePrice, 
+      stock, 
+      location
+    });
+    addProduct(productObj);
+    closeQuickAddModal();
+  }
+
+  /*********************************************************************
+   * 7. FULL ADD MODAL
+   *********************************************************************/
+  function openFullAddModal() {
+    document.getElementById('fullAddModalOverlay').style.display = 'flex';
+    document.getElementById('fullAddForm').reset();
+  }
+  function closeFullAddModal() {
+    document.getElementById('fullAddModalOverlay').style.display = 'none';
+  }
+  function handleFullAddSubmit(e) {
+    e.preventDefault();
     const name = document.getElementById('pName').value.trim();
     const sku = document.getElementById('pSku').value.trim();
     const purchasePrice = document.getElementById('pPurchasePrice').value;
@@ -836,7 +912,7 @@
     const reorderThreshold = document.getElementById('pReorderThreshold').value;
     const reorderQty = document.getElementById('pReorderQty').value;
     const category = document.getElementById('pCategory').value.trim();
-    const statusOptions = Array.from(document.getElementById('pStatus').selectedOptions).map(opt => opt.value);
+    const statusArr = Array.from(document.getElementById('pStatus').selectedOptions).map(opt => opt.value);
     const supplier = document.getElementById('pSupplier').value.trim();
     const location = document.getElementById('pLocation').value.trim();
     const description = document.getElementById('pDescription').value;
@@ -846,29 +922,28 @@
     if (imageFile) {
       const reader = new FileReader();
       reader.onload = function(ev) {
-        finalizeAdd({
+        finalizeFullAdd({
           name, sku, purchasePrice, stock, reorderThreshold, reorderQty,
-          category, status: statusOptions, supplier, location, imageData: ev.target.result,
-          description
+          category, status: statusArr, supplier, location, 
+          imageData: ev.target.result, description
         });
       };
       reader.readAsDataURL(imageFile);
     } else {
-      finalizeAdd({
+      finalizeFullAdd({
         name, sku, purchasePrice, stock, reorderThreshold, reorderQty,
-        category, status: statusOptions, supplier, location, imageData: '', description
+        category, status: statusArr, supplier, location, imageData: '', description
       });
     }
   }
-
-  function finalizeAdd(formData) {
-    const productObj = createProductObj(formData);
+  function finalizeFullAdd(data) {
+    const productObj = createProductObj(data);
     addProduct(productObj);
-    closeModal();
+    closeFullAddModal();
   }
 
   /*********************************************************************
-   * 7. EXPORT CSV
+   * 8. EXPORT / IMPORT
    *********************************************************************/
   function exportCsv() {
     if (!inventoryData.length) {
@@ -882,14 +957,14 @@
     ].join(',') + '\n';
 
     inventoryData.forEach((p) => {
-      let row = [
+      const row = [
         p.name,
         p.sku,
         p.purchasePrice,
         p.sellingPrice,
         p.stock,
         p.category,
-        (p.status || []).join('|'),
+        (p.status||[]).join('|'),
         p.supplier,
         p.dateAdded,
         p.location
@@ -907,7 +982,7 @@
   }
 
   /*********************************************************************
-   * 8. CHART PLACEHOLDER
+   * 9. CHART PLACEHOLDER
    *********************************************************************/
   function initCharts() {
     if (typeof Chart === 'undefined') {
