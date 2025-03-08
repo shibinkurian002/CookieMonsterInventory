@@ -16,11 +16,13 @@
             --base-font-size: 24px;
             --line-height-base: 1.7;
 
-            --color-primary: #FF6B6B;
-            --color-secondary: #4ECDC4;
-            --color-accent: #FFE66D;
-            --color-neutral: #F7FFF7;
-            --color-dark: #1A535C;
+            /* Header Synced Colors */
+            --color-primary: #ffe960;      /* Yellow from header particles - for primary buttons/actions */
+            --color-secondary: #87ddfe;    /* Light blue from header particles - for secondary backgrounds/highlights */
+            --color-accent: #FFE66D;       /* Accent yellow - slightly different shade, but harmonious */
+            --color-neutral: #f0eefe;      /* Very light background - a light tint of header background */
+            --color-dark: #4b0082;         /* Dark purple - a darker shade from the header background for text/header bar */
+
 
             --font-header: 'Poppins', sans-serif;
             --font-body: 'Open Sans', sans-serif;
@@ -40,8 +42,8 @@
             font-family: var(--font-body), sans-serif;
             font-size: var(--base-font-size);
             line-height: var(--line-height-base);
-            background-color: var(--color-neutral);
-            color: var(--color-dark);
+            background-color: var(--color-neutral); /* Using synced neutral color */
+            color: var(--color-dark);             /* Using synced dark color */
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -67,7 +69,7 @@
         }
 
         header { /* Inventory Header Style - on top of animation */
-            background: var(--color-dark);
+            background: var(--color-dark); /* Using synced dark color for header background */
             color: #fff;
             height: 70px;
             display: flex;
@@ -103,7 +105,7 @@
         }
         .header__actions button {
             font-size: 1em;
-            background-color: var(--color-primary);
+            background-color: var(--color-primary); /* Using synced primary color for buttons */
             border: none;
             color: #fff;
             padding: 0.6rem 1rem;
@@ -121,7 +123,7 @@
         .hamburger span {
             width: 28px;
             height: 4px;
-            background-color: #fff;
+            background-color: #fff; /* Kept white for contrast on dark header */
         }
 
         /* ==============================
@@ -138,7 +140,7 @@
             ============================== */
         nav.sidebar {
             width: var(--sidebar-width);
-            background-color: #fff;
+            background-color: #fff; /* Kept white for sidebar background for better readability */
             border-right: 2px solid #eee;
             padding: 1rem;
             overflow-y: auto;
@@ -148,7 +150,7 @@
             font-family: var(--font-header);
             font-size: 1.1em;
             margin-bottom: 0.5rem;
-            color: var(--color-dark);
+            color: var(--color-dark); /* Using synced dark color */
         }
         nav.sidebar ul {
             list-style: none;
@@ -157,12 +159,12 @@
             padding: 0.6rem 0;
         }
         nav.sidebar li a {
-            color: var(--color-dark);
+            color: var(--color-dark); /* Using synced dark color */
             font-weight: 500;
             font-size: 1em;
         }
         nav.sidebar li a:hover {
-            color: var(--color-primary);
+            color: var(--color-primary); /* Using synced primary color for hover effect */
         }
 
         @media (max-width: 768px) {
@@ -197,10 +199,10 @@
         .breadcrumbs {
             font-size: 1em;
             margin-bottom: 1rem;
-            color: #555;
+            color: #555; /* Kept gray for breadcrumbs */
         }
         .breadcrumbs span {
-            color: var(--color-primary);
+            color: var(--color-primary); /* Using synced primary color for breadcrumb current item */
         }
 
         /* ==============================
@@ -216,7 +218,7 @@
             flex-wrap: wrap;
         }
         .dashboard__card {
-            background: #fff;
+            background: #fff; /* Kept white for dashboard cards for contrast */
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             flex: 1;
@@ -225,7 +227,7 @@
             cursor: pointer; /* clickable */
         }
         .dashboard__card:hover {
-            background-color: #ffe;
+            background-color: #ffe; /* Kept light yellow for card hover */
         }
         .dashboard__card h3 {
             font-size: 1.1em;
@@ -238,7 +240,7 @@
             gap: 1rem;
         }
         .dashboard__chart {
-            background: #fff;
+            background: #fff; /* Kept white for chart backgrounds */
             border-radius: 8px;
             flex: 1;
             min-width: 280px;
@@ -259,7 +261,7 @@
         }
         .inventory__toolbar button {
             font-size: 1em;
-            background-color: var(--color-primary);
+            background-color: var(--color-primary); /* Using synced primary color for buttons */
             border: none;
             color: #fff;
             padding: 0.6rem 1rem;
@@ -269,7 +271,7 @@
 
         /* TABLE VIEW */
         .inventory__table-view {
-            background: #fff;
+            background: #fff; /* Kept white for table view background */
             border-radius: 8px;
             padding: 1rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -290,7 +292,7 @@
             font-size: 1em;
         }
         table.inventory-table th {
-            background: var(--color-secondary);
+            background: var(--color-secondary); /* Using synced secondary color for table header */
             color: #fff;
             font-weight: 600;
         }
@@ -304,7 +306,7 @@
         /* GRID VIEW */
         .inventory__grid-view {
             display: none;
-            background: #fff;
+            background: #fff; /* Kept white for grid view background */
             border-radius: 8px;
             padding: 1rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -315,7 +317,7 @@
             gap: 1rem;
         }
         .grid-item {
-            background: #fdfdfd;
+            background: #fdfdfd; /* Light gray for grid items - slightly off-white */
             border: 1px solid #eee;
             border-radius: 8px;
             padding: 1rem;
@@ -342,7 +344,7 @@
         }
         .grid-item .actions button {
             font-size: 0.9em;
-            background-color: var(--color-primary);
+            background-color: var(--color-primary); /* Using synced primary color for grid item buttons */
             color: #fff;
             border: none;
             border-radius: 4px;
@@ -355,7 +357,7 @@
             ============================== */
         .product-detail {
             display: none;
-            background: #fff;
+            background: #fff; /* Kept white for product detail background */
             border-radius: 8px;
             padding: 1rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -381,7 +383,7 @@
             z-index: 999;
         }
         .modal {
-            background: #fff;
+            background: #fff; /* Kept white for modal background */
             border-radius: 8px;
             width: 600px;
             max-width: 95%;
@@ -427,7 +429,7 @@
         }
         .modal-buttons button {
             font-size: 1em;
-            background-color: var(--color-primary);
+            background-color: var(--color-primary); /* Using synced primary color for modal buttons */
             border: none;
             color: #fff;
             padding: 0.6rem 1.2rem;
@@ -435,7 +437,7 @@
             cursor: pointer;
         }
         .close-btn {
-            background-color: #777;
+            background-color: #777; /* Kept gray for close buttons */
         }
         .hidden {
             display: none !important;
