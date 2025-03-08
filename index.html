@@ -1,1413 +1,1288 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Inventory with Animated Header</title>
-    <style>
-        /* ==============================
-            1. RESET & VARIABLES
-            ============================== */
-        *, *::before, *::after {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        :root {
-            --base-font-size: 24px;
-            --line-height-base: 1.7;
+  <meta charset="UTF-8" />
+  <title>cookiemonster inventory</title>
+  <!-- 
+    Single-page HTML 
+    Enhanced with:
+    - Grid View toggle
+    - Batch Update with checkboxes
+    - Clickable dashboard card leads to Inventory
+    - Delete & Update per row (opens full form for update)
+  -->
+  <style>
+    /* ==============================
+       1. RESET & VARIABLES
+       ============================== */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    :root {
+      --base-font-size: 24px;  
+      --line-height-base: 1.7;
 
-            /* Header Synced Colors */
-            --color-primary: #ffe960;      /* Yellow from header particles - for primary buttons/actions */
-            --color-secondary: #87ddfe;    /* Light blue from header particles - for secondary backgrounds/highlights */
-            --color-accent: #FFE66D;       /* Accent yellow - slightly different shade, but harmonious */
-            --color-neutral: #f0eefe;      /* Very light background - a light tint of header background */
-            --color-dark: #4b0082;         /* Dark purple - a darker shade from the header background for text/header bar */
+      --color-primary: #FF6B6B;   
+      --color-secondary: #4ECDC4; 
+      --color-accent: #FFE66D;    
+      --color-neutral: #F7FFF7;   
+      --color-dark: #1A535C;      
 
+      --font-header: 'Poppins', sans-serif;
+      --font-body: 'Open Sans', sans-serif;
 
-            --font-header: 'Poppins', sans-serif;
-            --font-body: 'Open Sans', sans-serif;
+      --sidebar-width: 220px;
+    }
 
-            --sidebar-width: 220px;
-        }
+    body {
+      font-family: var(--font-body), sans-serif;
+      font-size: var(--base-font-size);
+      line-height: var(--line-height-base);
+      background-color: var(--color-neutral);
+      color: var(--color-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-        html, body { /* Ensure html and body take full width and height - for header */
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow-x: hidden;
-        }
+    a {
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
 
-        body {
-            font-family: var(--font-body), sans-serif;
-            font-size: var(--base-font-size);
-            line-height: var(--line-height-base);
-            background-color: var(--color-neutral); /* Using synced neutral color */
-            color: var(--color-dark);             /* Using synced dark color */
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+    /* ==============================
+       2. HEADER
+       ============================== */
+    header {
+      background: var(--color-dark);
+      color: #fff;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      position: relative;
+      z-index: 1000;
+    }
+    .header__logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-header);
+      font-size: 1.2em;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .header__logo img {
+      height: 50px;
+    }
+    .header__actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .header__actions input[type="search"] {
+      font-size: 1em;
+      padding: 0.5rem 0.8rem;
+      border: none;
+      border-radius: 4px;
+      outline: none;
+    }
+    .header__actions button {
+      font-size: 1em;
+      background-color: var(--color-primary);
+      border: none;
+      color: #fff;
+      padding: 0.6rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
 
-        a {
-            text-decoration: none;
-            color: inherit;
-            cursor: pointer;
-        }
+    /* HAMBURGER (for mobile) */
+    .hamburger {
+      display: none;
+      cursor: pointer;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .hamburger span {
+      width: 28px;
+      height: 4px;
+      background-color: #fff;
+    }
 
-        /* ==============================
-            2. HEADER (Animated Header + Inventory Header)
-            ============================== */
-        .header.finisher-header { /* Animated Header Style */
-            width: 100%;
-            height: 300px; /* Adjust height as needed for animation */
-            display: block;
-            box-sizing: border-box;
-            overflow: hidden;
-            position: relative; /* For stacking context */
-            z-index: 10; /* Ensure animation is behind inventory header */
-        }
+    /* ==============================
+       3. CONTAINER
+       ============================== */
+    .container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
 
-        header { /* Inventory Header Style - on top of animation */
-            background: var(--color-dark); /* Using synced dark color for header background */
-            color: #fff;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 1rem;
-            position: relative; /* For stacking context */
-            z-index: 20; /* Ensure inventory header is on top */
-        }
-        .header__logo {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-family: var(--font-header);
-            font-size: 1.2em;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-        .header__logo img {
-            height: 50px;
-        }
-        .header__actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .header__actions input[type="search"] {
-            font-size: 1em;
-            padding: 0.5rem 0.8rem;
-            border: none;
-            border-radius: 4px;
-            outline: none;
-        }
-        .header__actions button {
-            font-size: 1em;
-            background-color: var(--color-primary); /* Using synced primary color for buttons */
-            border: none;
-            color: #fff;
-            padding: 0.6rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+    /* ==============================
+       4. SIDEBAR
+       ============================== */
+    nav.sidebar {
+      width: var(--sidebar-width);
+      background-color: #fff;
+      border-right: 2px solid #eee;
+      padding: 1rem;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+    }
+    nav.sidebar h2 {
+      font-family: var(--font-header);
+      font-size: 1.1em;
+      margin-bottom: 0.5rem;
+      color: var(--color-dark);
+    }
+    nav.sidebar ul {
+      list-style: none;
+    }
+    nav.sidebar li {
+      padding: 0.6rem 0;
+    }
+    nav.sidebar li a {
+      color: var(--color-dark);
+      font-weight: 500;
+      font-size: 1em;
+    }
+    nav.sidebar li a:hover {
+      color: var(--color-primary);
+    }
 
-        /* HAMBURGER (for mobile) */
-        .hamburger {
-            display: none;
-            cursor: pointer;
-            flex-direction: column;
-            gap: 6px;
-        }
-        .hamburger span {
-            width: 28px;
-            height: 4px;
-            background-color: #fff; /* Kept white for contrast on dark header */
-        }
+    @media (max-width: 768px) {
+      nav.sidebar {
+        position: absolute;
+        top: 70px;
+        left: 0;
+        height: calc(100vh - 70px);
+        transform: translateX(-100%);
+        z-index: 999;
+      }
+      nav.sidebar.show {
+        transform: translateX(0);
+      }
+      .hamburger {
+        display: flex;
+      }
+    }
 
-        /* ==============================
-            3. CONTAINER
-            ============================== */
-        .container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
+    /* ==============================
+       5. MAIN CONTENT
+       ============================== */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
 
-        /* ==============================
-            4. SIDEBAR
-            ============================== */
-        nav.sidebar {
-            width: var(--sidebar-width);
-            background-color: #fff; /* Kept white for sidebar background for better readability */
-            border-right: 2px solid #eee;
-            padding: 1rem;
-            overflow-y: auto;
-            transition: transform 0.3s ease;
-        }
-        nav.sidebar h2 {
-            font-family: var(--font-header);
-            font-size: 1.1em;
-            margin-bottom: 0.5rem;
-            color: var(--color-dark); /* Using synced dark color */
-        }
-        nav.sidebar ul {
-            list-style: none;
-        }
-        nav.sidebar li {
-            padding: 0.6rem 0;
-        }
-        nav.sidebar li a {
-            color: var(--color-dark); /* Using synced dark color */
-            font-weight: 500;
-            font-size: 1em;
-        }
-        nav.sidebar li a:hover {
-            color: var(--color-primary); /* Using synced primary color for hover effect */
-        }
+    /* BREADCRUMBS */
+    .breadcrumbs {
+      font-size: 1em;
+      margin-bottom: 1rem;
+      color: #555;
+    }
+    .breadcrumbs span {
+      color: var(--color-primary);
+    }
 
-        @media (max-width: 768px) {
-            nav.sidebar {
-                position: absolute;
-                top: 70px;
-                left: 0;
-                height: calc(100vh - 70px);
-                transform: translateX(-100%);
-                z-index: 999;
-            }
-            nav.sidebar.show {
-                transform: translateX(0);
-            }
-            .hamburger {
-                display: flex;
-            }
-        }
+    /* ==============================
+       6. DASHBOARD
+       ============================== */
+    .dashboard {
+      display: none;
+    }
+    .dashboard__cards {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .dashboard__card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      flex: 1;
+      min-width: 160px;
+      padding: 1rem;
+      cursor: pointer; /* clickable */
+    }
+    .dashboard__card:hover {
+      background-color: #ffe;
+    }
+    .dashboard__card h3 {
+      font-size: 1.1em;
+      margin-bottom: 0.5rem;
+      font-family: var(--font-header);
+    }
+    .dashboard__charts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .dashboard__chart {
+      background: #fff;
+      border-radius: 8px;
+      flex: 1;
+      min-width: 280px;
+      padding: 1rem;
+    }
 
-        /* ==============================
-            5. MAIN CONTENT
-            ============================== */
-        main {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+    /* ==============================
+       7. INVENTORY
+       ============================== */
+    .inventory {
+      display: none;
+    }
+    .inventory__toolbar {
+      display: flex;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+      justify-content: flex-end;
+    }
+    .inventory__toolbar button {
+      font-size: 1em;
+      background-color: var(--color-primary);
+      border: none;
+      color: #fff;
+      padding: 0.6rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
 
-        /* BREADCRUMBS */
-        .breadcrumbs {
-            font-size: 1em;
-            margin-bottom: 1rem;
-            color: #555; /* Kept gray for breadcrumbs */
-        }
-        .breadcrumbs span {
-            color: var(--color-primary); /* Using synced primary color for breadcrumb current item */
-        }
+    /* TABLE VIEW */
+    .inventory__table-view {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      overflow-x: auto;
+      display: block; 
+    }
+    table.inventory-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+    table.inventory-table th,
+    table.inventory-table td {
+      text-align: left;
+      padding: 0.6rem;
+      border-bottom: 1px solid #eee;
+      vertical-align: top;
+      font-size: 1em;
+    }
+    table.inventory-table th {
+      background: var(--color-secondary);
+      color: #fff;
+      font-weight: 600;
+    }
+    table.inventory-table img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
 
-        /* ==============================
-            6. DASHBOARD
-            ============================== */
-        .dashboard {
-            display: none;
-        }
-        .dashboard__cards {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-        }
-        .dashboard__card {
-            background: #fff; /* Kept white for dashboard cards for contrast */
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            flex: 1;
-            min-width: 160px;
-            padding: 1rem;
-            cursor: pointer; /* clickable */
-        }
-        .dashboard__card:hover {
-            background-color: #ffe; /* Kept light yellow for card hover */
-        }
-        .dashboard__card h3 {
-            font-size: 1.1em;
-            margin-bottom: 0.5rem;
-            font-family: var(--font-header);
-        }
-        .dashboard__charts {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .dashboard__chart {
-            background: #fff; /* Kept white for chart backgrounds */
-            border-radius: 8px;
-            flex: 1;
-            min-width: 280px;
-            padding: 1rem;
-        }
+    /* GRID VIEW */
+    .inventory__grid-view {
+      display: none;
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+    .grid-item {
+      background: #fdfdfd;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      position: relative;
+    }
+    .grid-item img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+    .grid-item h4 {
+      font-size: 1em;
+      margin-bottom: 0.2rem;
+    }
+    .grid-item .actions {
+      margin-top: auto; 
+      display: flex;
+      gap: 0.5rem;
+    }
+    .grid-item .actions button {
+      font-size: 0.9em;
+      background-color: var(--color-primary);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+    }
 
-        /* ==============================
-            7. INVENTORY
-            ============================== */
-        .inventory {
-            display: none;
-        }
-        .inventory__toolbar {
-            display: flex;
-            gap: 0.8rem;
-            margin-bottom: 1rem;
-            justify-content: flex-end;
-        }
-        .inventory__toolbar button {
-            font-size: 1em;
-            background-color: var(--color-primary); /* Using synced primary color for buttons */
-            border: none;
-            color: #fff;
-            padding: 0.6rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+    /* ==============================
+       8. PRODUCT DETAIL
+       ============================== */
+    .product-detail {
+      display: none;
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .product-detail h2 {
+      margin-bottom: 1rem;
+      font-family: var(--font-header);
+      font-size: 1.2em;
+    }
 
-        /* TABLE VIEW */
-        .inventory__table-view {
-            background: #fff; /* Kept white for table view background */
-            border-radius: 8px;
-            padding: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            overflow-x: auto;
-            display: block;
-        }
-        table.inventory-table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
-        }
-        table.inventory-table th,
-        table.inventory-table td {
-            text-align: left;
-            padding: 0.6rem;
-            border-bottom: 1px solid #eee;
-            vertical-align: top;
-            font-size: 1em;
-        }
-        table.inventory-table th {
-            background: var(--color-secondary); /* Using synced secondary color for table header */
-            color: #fff;
-            font-weight: 600;
-        }
-        table.inventory-table img {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-
-        /* GRID VIEW */
-        .inventory__grid-view {
-            display: none;
-            background: #fff; /* Kept white for grid view background */
-            border-radius: 8px;
-            padding: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-        .grid-item {
-            background: #fdfdfd; /* Light gray for grid items - slightly off-white */
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            position: relative;
-        }
-        .grid-item img {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 4px;
-            margin-bottom: 0.5rem;
-        }
-        .grid-item h4 {
-            font-size: 1em;
-            margin-bottom: 0.2rem;
-        }
-        .grid-item .actions {
-            margin-top: auto;
-            display: flex;
-            gap: 0.5rem;
-        }
-        .grid-item .actions button {
-            font-size: 0.9em;
-            background-color: var(--color-primary); /* Using synced primary color for grid item buttons */
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            padding: 0.4rem 0.8rem;
-            cursor: pointer;
-        }
-
-        /* ==============================
-            8. PRODUCT DETAIL
-            ============================== */
-        .product-detail {
-            display: none;
-            background: #fff; /* Kept white for product detail background */
-            border-radius: 8px;
-            padding: 1rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .product-detail h2 {
-            margin-bottom: 1rem;
-            font-family: var(--font-header);
-            font-size: 1.2em;
-        }
-
-        /* ==============================
-            9. MODALS (SCROLLABLE)
-            ============================== */
-        .modal-overlay {
-            position: fixed;
-            top:0; left:0;
-            width:100%;
-            height:100%;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-        }
-        .modal {
-            background: #fff; /* Kept white for modal background */
-            border-radius: 8px;
-            width: 600px;
-            max-width: 95%;
-            max-height: 90%;
-            padding: 1rem;
-            overflow-y: auto;
-        }
-        .modal h2 {
-            margin-bottom: 1rem;
-            font-family: var(--font-header);
-            font-size: 1.2em;
-        }
-        .modal form {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-        .modal form label {
-            display: block;
-            font-size: 1em;
-            margin-bottom: 0.4rem;
-        }
-        .modal form input[type="text"],
-        .modal form input[type="number"],
-        .modal form input[type="date"],
-        .modal form select,
-        .modal form textarea {
-            width: 100%;
-            font-size: 1em;
-            padding: 0.6rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .modal form .full-span {
-            grid-column: 1 / 3;
-        }
-        .modal-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.8rem;
-            margin-top: 1rem;
-            grid-column: 1 / 3;
-        }
-        .modal-buttons button {
-            font-size: 1em;
-            background-color: var(--color-primary); /* Using synced primary color for modal buttons */
-            border: none;
-            color: #fff;
-            padding: 0.6rem 1.2rem;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .close-btn {
-            background-color: #777; /* Kept gray for close buttons */
-        }
-        .hidden {
-            display: none !important;
-        }
-    </style>
+    /* ==============================
+       9. MODALS (SCROLLABLE)
+       ============================== */
+    .modal-overlay {
+      position: fixed;
+      top:0; left:0;
+      width:100%;
+      height:100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .modal {
+      background: #fff;
+      border-radius: 8px;
+      width: 600px;
+      max-width: 95%;
+      max-height: 90%;
+      padding: 1rem;
+      overflow-y: auto; 
+    }
+    .modal h2 {
+      margin-bottom: 1rem;
+      font-family: var(--font-header);
+      font-size: 1.2em;
+    }
+    .modal form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    .modal form label {
+      display: block;
+      font-size: 1em;
+      margin-bottom: 0.4rem;
+    }
+    .modal form input[type="text"],
+    .modal form input[type="number"],
+    .modal form input[type="date"],
+    .modal form select,
+    .modal form textarea {
+      width: 100%;
+      font-size: 1em;
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .modal form .full-span {
+      grid-column: 1 / 3;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.8rem;
+      margin-top: 1rem;
+      grid-column: 1 / 3;
+    }
+    .modal-buttons button {
+      font-size: 1em;
+      background-color: var(--color-primary);
+      border: none;
+      color: #fff;
+      padding: 0.6rem 1.2rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .close-btn {
+      background-color: #777;
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
 </head>
 
 <body>
-    <div class="header finisher-header"></div>
-
-    <header>
-        <div class="header__logo">
-            <img
-                src="https://i.ibb.co/y22pQJt/Colorful-Turtle-Swimming-Club-Free-Logo.png"
-                alt="Colorful Turtle Logo"
-            />
-            cookiemonster inventory
-        </div>
-        <div class="header__actions">
-            <div class="hamburger" id="hamburgerBtn">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            <input type="search" placeholder="Search..." id="globalSearch" />
-            <button id="quickAddBtn">Quick Add</button>
-        </div>
-    </header>
-
-    <div class="container">
-        <nav class="sidebar" id="sidebarMenu">
-            <h2>Fidgeting Fingers</h2>
-            <ul>
-                <li><a id="navDashboard">Dashboard</a></li>
-                <li><a id="navInventory">Inventory</a></li>
-                <li><a id="navProductDetail">Product Detail</a></li>
-            </ul>
-            <h2>Tools</h2>
-            <ul>
-                <li><a id="exportCsv">Export CSV</a></li>
-                <li><a id="importData">Import Data</a></li>
-                <li><a id="fullAddLink">Full Add Form</a></li>
-            </ul>
-        </nav>
-
-        <main>
-            <div class="breadcrumbs">
-                <span id="breadcrumbCurrent">Home</span>
-            </div>
-
-            <section class="dashboard" id="dashboardSection">
-                <div class="dashboard__cards">
-                    <div class="dashboard__card" id="cardTotalValue">
-                        <h3>Total Inventory Value</h3>
-                        <p id="totalValue">£0.00</p>
-                    </div>
-                    <div class="dashboard__card" id="cardTotalItems">
-                        <h3>Total Items</h3>
-                        <p id="totalItems">0</p>
-                    </div>
-                    <div class="dashboard__card">
-                        <h3>Low Stock</h3>
-                        <p id="lowStockCount">0</p>
-                    </div>
-                </div>
-                <div class="dashboard__charts">
-                    <div class="dashboard__chart">
-                        <canvas id="chartByCategory" width="400" height="200"></canvas>
-                    </div>
-                    <div class="dashboard__chart">
-                        <canvas id="chartByStatus" width="400" height="200"></canvas>
-                    </div>
-                </div>
-            </section>
-
-            <section class="inventory" id="inventorySection">
-                <div class="inventory__toolbar">
-                    <button id="btnViewGrid">Grid View</button>
-                    <button id="btnViewTable">Table View</button>
-                    <button id="batchUpdateBtn">Batch Update</button>
-                </div>
-
-                <div class="inventory__table-view" id="tableViewContainer">
-                    <table class="inventory-table" id="inventoryTable">
-                        <thead>
-                            <tr>
-                                <th><input type="checkbox" id="checkAll"/></th>
-                                <th>Image</th>
-                                <th>Product Name</th>
-                                <th>SKU</th>
-                                <th>Purchase Price (VAT incl.)</th>
-                                <th>Selling Price</th>
-                                <th>Stock</th>
-                                <th>Category</th>
-                                <th>Status</th>
-                                <th>Supplier</th>
-                                <th>Date Added</th>
-                                <th>Location</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            </tbody>
-                    </table>
-                </div>
-
-                <div class="inventory__grid-view" id="gridViewContainer">
-                    <div class="grid-container" id="gridContainer">
-                        </div>
-                </div>
-            </section>
-
-            <section class="product-detail" id="productDetailSection">
-                <h2>Product Detail</h2>
-                <div id="productDetailContent">
-                    </div>
-            </section>
-        </main>
+  <!-- HEADER -->
+  <header>
+    <div class="header__logo">
+      <img 
+        src="https://i.ibb.co/y22pQJt/Colorful-Turtle-Swimming-Club-Free-Logo.png" 
+        alt="Colorful Turtle Logo"
+      />
+      cookiemonster inventory
     </div>
-
-    <div class="modal-overlay" id="quickAddModalOverlay">
-        <div class="modal">
-            <h2>Quick Add Product</h2>
-            <form id="quickAddForm" class="quick-add-form" style="grid-template-columns: 1fr;">
-                <label for="qName">Product Name</label>
-                <input type="text" id="qName" required />
-
-                <label for="qPurchasePrice">Purchase Price</label>
-                <input type="number" id="qPurchasePrice" step="0.01" required />
-
-                <label for="qStock">Stock Qty</label>
-                <input type="number" id="qStock" step="1" required />
-
-                <label for="qCategory">Category</label>
-                <input type="text" id="qCategory" placeholder="e.g. Putty, Spinner..." />
-
-                <label for="qStatus">Status (multi-select)</label>
-                <select id="qStatus" multiple size="4">
-                    <option value="Available on Website">Available on Website</option>
-                    <option value="Available on TikTok">Available on TikTok</option>
-                    <option value="Needs Processing">Needs Processing</option>
-                    <option value="Out of Stock">Out of Stock</option>
-                </select>
-
-                <label for="qSupplier">Supplier</label>
-                <input type="text" id="qSupplier" placeholder="e.g. ABC Corp." />
-
-                <label for="qLocation">Location</label>
-                <input type="text" id="qLocation" placeholder="e.g. Shelf 3" />
-
-                <div class="modal-buttons full-span">
-                    <button type="button" class="close-btn" id="closeQuickAdd">Cancel</button>
-                    <button type="submit">Add</button>
-                </div>
-            </form>
-        </div>
+    <div class="header__actions">
+      <div class="hamburger" id="hamburgerBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <input type="search" placeholder="Search..." id="globalSearch" />
+      <button id="quickAddBtn">Quick Add</button>
     </div>
+  </header>
 
-    <div class="modal-overlay" id="fullAddModalOverlay">
-        <div class="modal">
-            <h2 id="modalTitle">Full Add Product</h2>
-            <form id="fullAddForm">
-                <div>
-                    <label for="pName">Product Name</label>
-                    <input type="text" id="pName" required />
-                </div>
-                <div>
-                    <label for="pSku">SKU/ID</label>
-                    <input type="text" id="pSku" placeholder="Auto-generate or type" />
-                </div>
-                <div>
-                    <label for="pPurchasePrice">Purchase Price (VAT incl.)</label>
-                    <input type="number" id="pPurchasePrice" step="0.01" required />
-                </div>
-                <div>
-                    <label for="pStock">Current Stock Qty</label>
-                    <input type="number" id="pStock" step="1" required />
-                </div>
-                <div>
-                    <label for="pReorderThreshold">Reorder Threshold</label>
-                    <input type="number" id="pReorderThreshold" step="1" />
-                </div>
-                <div>
-                    <label for="pReorderQty">Reorder Quantity</label>
-                    <input type="number" id="pReorderQty" step="1" />
-                </div>
+  <div class="container">
+    <!-- SIDEBAR -->
+    <nav class="sidebar" id="sidebarMenu">
+      <h2>Fidgeting Fingers</h2>
+      <ul>
+        <li><a id="navDashboard">Dashboard</a></li>
+        <li><a id="navInventory">Inventory</a></li>
+        <li><a id="navProductDetail">Product Detail</a></li>
+      </ul>
+      <h2>Tools</h2>
+      <ul>
+        <li><a id="exportCsv">Export CSV</a></li>
+        <li><a id="importData">Import Data</a></li>
+        <li><a id="fullAddLink">Full Add Form</a></li>
+      </ul>
+    </nav>
 
-                <div>
-                    <label for="pCategory">Category</label>
-                    <input type="text" id="pCategory" placeholder="Enter any category" />
-                </div>
-                <div>
-                    <label for="pStatus">Status (multi-select)</label>
-                    <select id="pStatus" multiple size="4">
-                        <option value="Available on Website">Available on Website</option>
-                        <option value="Available on TikTok">Available on TikTok</option>
-                        <option value="Needs Processing">Needs Processing</option>
-                        <option value="Out of Stock">Out of Stock</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="pSupplier">Supplier</label>
-                    <input type="text" id="pSupplier" />
-                </div>
-                <div>
-                    <label for="pLocation">Location</label>
-                    <input type="text" id="pLocation" placeholder="Warehouse A, Shelf 3, etc." />
-                </div>
-                <div>
-                    <label for="pImage">Product Image</label>
-                    <input type="file" id="pImage" accept="image/*" />
-                </div>
-                <div class="full-span">
-                    <label for="pDescription">Product Description</label>
-                    <textarea id="pDescription" rows="3"></textarea>
-                </div>
-                <div class="modal-buttons">
-                    <button type="button" class="close-btn" id="closeFullAdd">Cancel</button>
-                    <button type="submit" id="saveProductBtn">Save</button>
-                </div>
-            </form>
+    <!-- MAIN CONTENT -->
+    <main>
+      <!-- BREADCRUMBS -->
+      <div class="breadcrumbs">
+        <span id="breadcrumbCurrent">Home</span>
+      </div>
+
+      <!-- DASHBOARD SECTION -->
+      <section class="dashboard" id="dashboardSection">
+        <div class="dashboard__cards">
+          <div class="dashboard__card" id="cardTotalValue">
+            <h3>Total Inventory Value</h3>
+            <p id="totalValue">£0.00</p>
+          </div>
+          <div class="dashboard__card" id="cardTotalItems">
+            <h3>Total Items</h3>
+            <p id="totalItems">0</p>
+          </div>
+          <div class="dashboard__card">
+            <h3>Low Stock</h3>
+            <p id="lowStockCount">0</p>
+          </div>
         </div>
-    </div>
-
-    <div class="modal-overlay" id="batchUpdateModalOverlay">
-        <div class="modal">
-            <h2>Batch Update</h2>
-            <form id="batchUpdateForm" style="grid-template-columns: 1fr;">
-                <label for="batchCategory">Change Category for selected</label>
-                <input type="text" id="batchCategory" placeholder="e.g. Clearance" />
-                <div class="modal-buttons">
-                    <button type="button" class="close-btn" id="closeBatchUpdate">Cancel</button>
-                    <button type="submit">Apply</button>
-                </div>
-            </form>
+        <div class="dashboard__charts">
+          <div class="dashboard__chart">
+            <canvas id="chartByCategory" width="400" height="200"></canvas>
+          </div>
+          <div class="dashboard__chart">
+            <canvas id="chartByStatus" width="400" height="200"></canvas>
+          </div>
         </div>
+      </section>
+
+      <!-- INVENTORY SECTION -->
+      <section class="inventory" id="inventorySection">
+        <div class="inventory__toolbar">
+          <button id="btnViewGrid">Grid View</button>
+          <button id="btnViewTable">Table View</button>
+          <button id="batchUpdateBtn">Batch Update</button>
+        </div>
+
+        <!-- TABLE VIEW -->
+        <div class="inventory__table-view" id="tableViewContainer">
+          <table class="inventory-table" id="inventoryTable">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="checkAll"/></th>
+                <th>Image</th>
+                <th>Product Name</th>
+                <th>SKU</th>
+                <th>Purchase Price (VAT incl.)</th>
+                <th>Selling Price</th>
+                <th>Stock</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Supplier</th>
+                <th>Date Added</th>
+                <th>Location</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- GRID VIEW -->
+        <div class="inventory__grid-view" id="gridViewContainer">
+          <div class="grid-container" id="gridContainer">
+            <!-- Grid items via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- PRODUCT DETAIL SECTION -->
+      <section class="product-detail" id="productDetailSection">
+        <h2>Product Detail</h2>
+        <div id="productDetailContent">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- QUICK ADD MODAL -->
+  <div class="modal-overlay" id="quickAddModalOverlay">
+    <div class="modal">
+      <h2>Quick Add Product</h2>
+      <form id="quickAddForm" class="quick-add-form" style="grid-template-columns: 1fr;">
+        <label for="qName">Product Name</label>
+        <input type="text" id="qName" required />
+
+        <label for="qPurchasePrice">Purchase Price</label>
+        <input type="number" id="qPurchasePrice" step="0.01" required />
+
+        <label for="qStock">Stock Qty</label>
+        <input type="number" id="qStock" step="1" required />
+
+        <label for="qCategory">Category</label>
+        <input type="text" id="qCategory" placeholder="e.g. Putty, Spinner..." />
+
+        <label for="qStatus">Status (multi-select)</label>
+        <select id="qStatus" multiple size="4">
+          <option value="Available on Website">Available on Website</option>
+          <option value="Available on TikTok">Available on TikTok</option>
+          <option value="Needs Processing">Needs Processing</option>
+          <option value="Out of Stock">Out of Stock</option>
+        </select>
+
+        <label for="qSupplier">Supplier</label>
+        <input type="text" id="qSupplier" placeholder="e.g. ABC Corp." />
+
+        <label for="qLocation">Location</label>
+        <input type="text" id="qLocation" placeholder="e.g. Shelf 3" />
+
+        <div class="modal-buttons full-span">
+          <button type="button" class="close-btn" id="closeQuickAdd">Cancel</button>
+          <button type="submit">Add</button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <script src="finisher-header.es5.min.js" type="text/javascript"></script>
-    <script type="text/javascript">
-        new FinisherHeader({
-          "count": 35,
-          "size": {
-            "min": 5,
-            "max": 120,
-            "pulse": 0.1
-          },
-          "speed": {
-            "x": {
-              "min": 0,
-              "max": 0.2
-            },
-            "y": {
-              "min": 0,
-              "max": 0.4
-            }
-          },
-          "colors": {
-            "background": "#b580ff",
-            "particles": [
-              "#ffe960",
-              "#87ddfe",
-              "#8481ff",
-              "#fc7bfc",
-              "#e2ffa5"
-            ]
-          },
-          "blending": "overlay",
-          "opacity": {
-            "center": 0,
-            "edge": 0.7
-          },
-          "skew": -2,
-          "shapes": [
-            "c"
-          ]
-        });
-    </script>
+  <!-- FULL ADD/EDIT MODAL -->
+  <div class="modal-overlay" id="fullAddModalOverlay">
+    <div class="modal">
+      <h2 id="modalTitle">Full Add Product</h2>
+      <form id="fullAddForm">
+        <div>
+          <label for="pName">Product Name</label>
+          <input type="text" id="pName" required />
+        </div>
+        <div>
+          <label for="pSku">SKU/ID</label>
+          <input type="text" id="pSku" placeholder="Auto-generate or type" />
+        </div>
+        <div>
+          <label for="pPurchasePrice">Purchase Price (VAT incl.)</label>
+          <input type="number" id="pPurchasePrice" step="0.01" required />
+        </div>
+        <div>
+          <label for="pStock">Current Stock Qty</label>
+          <input type="number" id="pStock" step="1" required />
+        </div>
+        <div>
+          <label for="pReorderThreshold">Reorder Threshold</label>
+          <input type="number" id="pReorderThreshold" step="1" />
+        </div>
+        <div>
+          <label for="pReorderQty">Reorder Quantity</label>
+          <input type="number" id="pReorderQty" step="1" />
+        </div>
 
-    <script>
-    /*********************************************************************
-     * 1. STATE & DATA
-     *********************************************************************/
-    const LS_KEY = 'fidgetToyInventoryData';
-    let inventoryData = [];
-    let dailyBackupKey = 'fidgetToyInventoryBackup_';
-    let autoSaveInterval;
+        <div>
+          <label for="pCategory">Category</label>
+          <input type="text" id="pCategory" placeholder="Enter any category" />
+        </div>
+        <div>
+          <label for="pStatus">Status (multi-select)</label>
+          <select id="pStatus" multiple size="4">
+            <option value="Available on Website">Available on Website</option>
+            <option value="Available on TikTok">Available on TikTok</option>
+            <option value="Needs Processing">Needs Processing</option>
+            <option value="Out of Stock">Out of Stock</option>
+          </select>
+        </div>
+        <div>
+          <label for="pSupplier">Supplier</label>
+          <input type="text" id="pSupplier" />
+        </div>
+        <div>
+          <label for="pLocation">Location</label>
+          <input type="text" id="pLocation" placeholder="Warehouse A, Shelf 3, etc." />
+        </div>
+        <div>
+          <label for="pImage">Product Image</label>
+          <input type="file" id="pImage" accept="image/*" />
+        </div>
+        <div class="full-span">
+          <label for="pDescription">Product Description</label>
+          <textarea id="pDescription" rows="3"></textarea>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" class="close-btn" id="closeFullAdd">Cancel</button>
+          <button type="submit" id="saveProductBtn">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-    // Track edit mode (if we're editing an existing product)
-    let editMode = false;
-    let editProductId = null; // which product are we editing?
+  <!-- BATCH UPDATE MODAL (demo) -->
+  <div class="modal-overlay" id="batchUpdateModalOverlay">
+    <div class="modal">
+      <h2>Batch Update</h2>
+      <form id="batchUpdateForm" style="grid-template-columns: 1fr;">
+        <label for="batchCategory">Change Category for selected</label>
+        <input type="text" id="batchCategory" placeholder="e.g. Clearance" />
+        <div class="modal-buttons">
+          <button type="button" class="close-btn" id="closeBatchUpdate">Cancel</button>
+          <button type="submit">Apply</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-    document.addEventListener('DOMContentLoaded', initApp);
+  <script>
+  /*********************************************************************
+   * 1. STATE & DATA
+   *********************************************************************/
+  const LS_KEY = 'fidgetToyInventoryData';
+  let inventoryData = [];
+  let dailyBackupKey = 'fidgetToyInventoryBackup_';
+  let autoSaveInterval;
 
-    function initApp() {
-        loadData();
-        switchSection('dashboard');
-        renderAllViews();
-        autoSaveInterval = setInterval(saveData, 30000);
-        dailyBackup();
-        bindEvents();
-        initCharts();
+  // Track edit mode (if we're editing an existing product)
+  let editMode = false;
+  let editProductId = null; // which product are we editing?
+
+  document.addEventListener('DOMContentLoaded', initApp);
+
+  function initApp() {
+    loadData();
+    switchSection('dashboard');
+    renderAllViews();
+    autoSaveInterval = setInterval(saveData, 30000);
+    dailyBackup();
+    bindEvents();
+    initCharts();
+  }
+
+  /*********************************************************************
+   * 2. LOADING & SAVING
+   *********************************************************************/
+  function loadData() {
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved) {
+      try {
+        inventoryData = JSON.parse(saved) || [];
+      } catch(e) {
+        console.error('Error loading data:', e);
+        inventoryData = [];
+      }
     }
+  }
+  function saveData() {
+    localStorage.setItem(LS_KEY, JSON.stringify(inventoryData));
+  }
+  function dailyBackup() {
+    const today = new Date().toISOString().slice(0,10);
+    const backupName = dailyBackupKey + today;
+    if (!localStorage.getItem(backupName)) {
+      localStorage.setItem(backupName, JSON.stringify(inventoryData));
+      console.log('Daily backup created:', backupName);
+    }
+  }
 
-    /*********************************************************************
-     * 2. LOADING & SAVING
-     *********************************************************************/
-    function loadData() {
-        const saved = localStorage.getItem(LS_KEY);
-        if (saved) {
-            try {
-                inventoryData = JSON.parse(saved) || [];
-            } catch(e) {
-                console.error('Error loading data:', e);
-                inventoryData = [];
-            }
+  /*********************************************************************
+   * 3. EVENTS & NAV
+   *********************************************************************/
+  function bindEvents() {
+    // Hamburger
+    document.getElementById('hamburgerBtn').addEventListener('click', () => {
+      document.getElementById('sidebarMenu').classList.toggle('show');
+    });
+
+    // Nav
+    document.getElementById('navDashboard').addEventListener('click', () => {
+      switchSection('dashboard');
+      document.getElementById('sidebarMenu').classList.remove('show');
+    });
+    document.getElementById('navInventory').addEventListener('click', () => {
+      switchSection('inventory');
+      document.getElementById('sidebarMenu').classList.remove('show');
+    });
+    document.getElementById('navProductDetail').addEventListener('click', () => {
+      switchSection('productDetail');
+      document.getElementById('sidebarMenu').classList.remove('show');
+    });
+
+    // Tools
+    document.getElementById('exportCsv').addEventListener('click', exportCsv);
+    document.getElementById('importData').addEventListener('click', () => {
+      alert('Import placeholder. Use SheetJS or CSV parser for real implementation.');
+    });
+    document.getElementById('fullAddLink').addEventListener('click', () => {
+      openFullAddModal(); 
+      document.getElementById('sidebarMenu').classList.remove('show');
+    });
+
+    // Quick Add
+    document.getElementById('quickAddBtn').addEventListener('click', openQuickAddModal);
+    document.getElementById('closeQuickAdd').addEventListener('click', closeQuickAddModal);
+    document.getElementById('quickAddForm').addEventListener('submit', handleQuickAddSubmit);
+
+    // Full Add
+    document.getElementById('closeFullAdd').addEventListener('click', closeFullAddModal);
+    document.getElementById('fullAddForm').addEventListener('submit', handleFullAddSubmit);
+
+    // Inventory
+    document.getElementById('btnViewGrid').addEventListener('click', () => {
+      showGridView(true);
+    });
+    document.getElementById('btnViewTable').addEventListener('click', () => {
+      showGridView(false);
+    });
+    document.getElementById('batchUpdateBtn').addEventListener('click', openBatchUpdateModal);
+
+    // CheckAll for batch update
+    document.getElementById('checkAll').addEventListener('change', (e) => {
+      const checkboxes = document.querySelectorAll('.row-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = e.target.checked;
+      });
+    });
+
+    // Batch Update modal
+    document.getElementById('closeBatchUpdate').addEventListener('click', closeBatchUpdateModal);
+    document.getElementById('batchUpdateForm').addEventListener('submit', handleBatchUpdate);
+
+    // Dashboard card clicks
+    document.getElementById('cardTotalItems').addEventListener('click', () => {
+      switchSection('inventory');
+    });
+    document.getElementById('cardTotalValue').addEventListener('click', () => {
+      switchSection('inventory');
+    });
+  }
+
+  function switchSection(sectionName) {
+    document.getElementById('dashboardSection').style.display = 'none';
+    document.getElementById('inventorySection').style.display = 'none';
+    document.getElementById('productDetailSection').style.display = 'none';
+
+    if (sectionName === 'dashboard') {
+      document.getElementById('dashboardSection').style.display = 'block';
+      document.getElementById('breadcrumbCurrent').textContent = 'Dashboard';
+    } else if (sectionName === 'inventory') {
+      document.getElementById('inventorySection').style.display = 'block';
+      document.getElementById('breadcrumbCurrent').textContent = 'Inventory';
+    } else if (sectionName === 'productDetail') {
+      document.getElementById('productDetailSection').style.display = 'block';
+      document.getElementById('breadcrumbCurrent').textContent = 'Product Detail';
+    }
+  }
+
+  /*********************************************************************
+   * 4. CORE INVENTORY LOGIC
+   *********************************************************************/
+  function createProductObj({
+    id=null,
+    name,
+    sku,
+    purchasePrice,
+    stock,
+    category,
+    status,
+    supplier,
+    location,
+    description,
+    reorderThreshold,
+    reorderQty,
+    imageData
+  }) {
+    const dateAdded = new Date().toISOString().slice(0,10);
+    const purPrice = Number(purchasePrice) || 0;
+    const sellingPrice = calcSellingPrice(purPrice);
+    return {
+      id: id || crypto.randomUUID(),
+      name: name || 'Unnamed',
+      sku: sku || generateSku(),
+      purchasePrice: purPrice,
+      sellingPrice,
+      stock: Number(stock) || 0,
+      reorderThreshold: Number(reorderThreshold) || 0,
+      reorderQty: Number(reorderQty) || 0,
+      category: category || '',
+      status: status || [],
+      supplier: supplier || '',
+      location: location || '',
+      description: description || '',
+      imageData: imageData || '',
+      dateAdded
+    };
+  }
+  function generateSku() {
+    return 'SKU-' + Math.floor(Math.random() * 100000);
+  }
+  function calcSellingPrice(price) {
+    return ((price * 2) + (price * 0.1)).toFixed(2);
+  }
+  function addProduct(productObj) {
+    inventoryData.push(productObj);
+    renderAllViews();
+    saveData();
+  }
+  function updateProduct(updatedObj) {
+    const index = inventoryData.findIndex(p => p.id === updatedObj.id);
+    if (index !== -1) {
+      // keep the original dateAdded
+      updatedObj.dateAdded = inventoryData[index].dateAdded; 
+      inventoryData[index] = updatedObj;
+      renderAllViews();
+      saveData();
+    }
+  }
+  function deleteProduct(productId) {
+    const index = inventoryData.findIndex(p => p.id === productId);
+    if (index !== -1) {
+      inventoryData.splice(index, 1);
+      renderAllViews();
+      saveData();
+    }
+  }
+
+  /*********************************************************************
+   * 5. RENDERING (TABLE / GRID / DASHBOARD)
+   *********************************************************************/
+  function renderAllViews() {
+    renderInventoryTable();
+    renderInventoryGrid();
+    updateDashboard();
+  }
+
+  function renderInventoryTable() {
+    const tbody = document.querySelector('#inventoryTable tbody');
+    tbody.innerHTML = '';
+
+    inventoryData.forEach((product) => {
+      const tr = document.createElement('tr');
+      // Checkbox for batch
+      const cbTd = document.createElement('td');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.classList.add('row-checkbox');
+      cb.value = product.id;
+      cbTd.appendChild(cb);
+      tr.appendChild(cbTd);
+
+      // Image
+      const imgTd = document.createElement('td');
+      const img = document.createElement('img');
+      img.src = product.imageData
+        ? product.imageData
+        : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+      imgTd.appendChild(img);
+      tr.appendChild(imgTd);
+
+      // Name
+      const nameTd = document.createElement('td');
+      nameTd.textContent = product.name;
+      tr.appendChild(nameTd);
+
+      // SKU
+      const skuTd = document.createElement('td');
+      skuTd.textContent = product.sku;
+      tr.appendChild(skuTd);
+
+      // Purchase Price
+      const purchaseTd = document.createElement('td');
+      purchaseTd.textContent = '£' + product.purchasePrice.toFixed(2);
+      tr.appendChild(purchaseTd);
+
+      // Selling Price
+      const sellingTd = document.createElement('td');
+      sellingTd.textContent = '£' + product.sellingPrice;
+      tr.appendChild(sellingTd);
+
+      // Stock
+      const stockTd = document.createElement('td');
+      stockTd.textContent = product.stock;
+      tr.appendChild(stockTd);
+
+      // Category
+      const catTd = document.createElement('td');
+      catTd.textContent = product.category;
+      tr.appendChild(catTd);
+
+      // Status
+      const statusTd = document.createElement('td');
+      statusTd.textContent = (product.status || []).join(', ');
+      tr.appendChild(statusTd);
+
+      // Supplier
+      const suppTd = document.createElement('td');
+      suppTd.textContent = product.supplier;
+      tr.appendChild(suppTd);
+
+      // Date
+      const dateTd = document.createElement('td');
+      dateTd.textContent = product.dateAdded;
+      tr.appendChild(dateTd);
+
+      // Location
+      const locTd = document.createElement('td');
+      locTd.textContent = product.location;
+      tr.appendChild(locTd);
+
+      // Actions
+      const actionTd = document.createElement('td');
+      const btnEdit = document.createElement('button');
+      btnEdit.textContent = 'Update';
+      btnEdit.style.marginRight = '4px';
+      btnEdit.onclick = () => {
+        openEditProduct(product);
+      };
+      const btnDel = document.createElement('button');
+      btnDel.textContent = 'Delete';
+      btnDel.onclick = () => {
+        if (confirm('Are you sure you want to delete this product?')) {
+          deleteProduct(product.id);
         }
-    }
-    function saveData() {
-        localStorage.setItem(LS_KEY, JSON.stringify(inventoryData));
-    }
-    function dailyBackup() {
-        const today = new Date().toISOString().slice(0,10);
-        const backupName = dailyBackupKey + today;
-        if (!localStorage.getItem(backupName)) {
-            localStorage.setItem(backupName, JSON.stringify(inventoryData));
-            console.log('Daily backup created:', backupName);
+      };
+      actionTd.appendChild(btnEdit);
+      actionTd.appendChild(btnDel);
+      tr.appendChild(actionTd);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderInventoryGrid() {
+    const gridContainer = document.getElementById('gridContainer');
+    gridContainer.innerHTML = '';
+
+    inventoryData.forEach((product) => {
+      const itemDiv = document.createElement('div');
+      itemDiv.classList.add('grid-item');
+
+      const img = document.createElement('img');
+      img.src = product.imageData
+        ? product.imageData
+        : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+      itemDiv.appendChild(img);
+
+      const title = document.createElement('h4');
+      title.textContent = product.name;
+      itemDiv.appendChild(title);
+
+      const details = document.createElement('p');
+      details.textContent = `SKU: ${product.sku}`;
+      itemDiv.appendChild(details);
+
+      const priceLine = document.createElement('p');
+      priceLine.textContent = `£${product.purchasePrice.toFixed(2)} -> £${product.sellingPrice}`;
+      itemDiv.appendChild(priceLine);
+
+      const stockLine = document.createElement('p');
+      stockLine.textContent = `Stock: ${product.stock}`;
+      itemDiv.appendChild(stockLine);
+
+      const catLine = document.createElement('p');
+      catLine.textContent = `Category: ${product.category}`;
+      itemDiv.appendChild(catLine);
+
+      // Actions
+      const actionsDiv = document.createElement('div');
+      actionsDiv.classList.add('actions');
+
+      const editBtn = document.createElement('button');
+      editBtn.textContent = 'Update';
+      editBtn.onclick = () => {
+        openEditProduct(product);
+      };
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete';
+      delBtn.onclick = () => {
+        if (confirm('Are you sure you want to delete this product?')) {
+          deleteProduct(product.id);
         }
-    }
+      };
+      actionsDiv.appendChild(editBtn);
+      actionsDiv.appendChild(delBtn);
 
-    /*********************************************************************
-     * 3. EVENTS & NAV
-     *********************************************************************/
-    function bindEvents() {
-        // Hamburger
-        document.getElementById('hamburgerBtn').addEventListener('click', () => {
-            document.getElementById('sidebarMenu').classList.toggle('show');
+      itemDiv.appendChild(actionsDiv);
+
+      gridContainer.appendChild(itemDiv);
+    });
+  }
+
+  function showGridView(enableGrid) {
+    const tableView = document.getElementById('tableViewContainer');
+    const gridView = document.getElementById('gridViewContainer');
+    if (enableGrid) {
+      tableView.classList.add('hidden');
+      gridView.classList.remove('hidden');
+    } else {
+      tableView.classList.remove('hidden');
+      gridView.classList.add('hidden');
+    }
+  }
+
+  function updateDashboard() {
+    document.getElementById('totalItems').textContent = inventoryData.length;
+
+    let totalVal = 0;
+    let lowStock = 0;
+    inventoryData.forEach(p => {
+      totalVal += p.purchasePrice * p.stock;
+      if (p.stock <= p.reorderThreshold) {
+        lowStock++;
+      }
+    });
+    document.getElementById('totalValue').textContent = '£' + totalVal.toFixed(2);
+    document.getElementById('lowStockCount').textContent = lowStock;
+  }
+
+  /*********************************************************************
+   * 6. QUICK ADD
+   *********************************************************************/
+  function openQuickAddModal() {
+    document.getElementById('quickAddModalOverlay').style.display = 'flex';
+    document.getElementById('quickAddForm').reset();
+  }
+  function closeQuickAddModal() {
+    document.getElementById('quickAddModalOverlay').style.display = 'none';
+  }
+  function handleQuickAddSubmit(e) {
+    e.preventDefault();
+    const name = document.getElementById('qName').value.trim();
+    const purchasePrice = document.getElementById('qPurchasePrice').value;
+    const stock = document.getElementById('qStock').value;
+    const category = document.getElementById('qCategory').value.trim();
+    const supplier = document.getElementById('qSupplier').value.trim();
+    const location = document.getElementById('qLocation').value.trim();
+    const statusArr = Array.from(document.getElementById('qStatus').selectedOptions).map(o => o.value);
+
+    const productObj = createProductObj({
+      name,
+      purchasePrice,
+      stock,
+      category,
+      status: statusArr,
+      supplier,
+      location
+    });
+    addProduct(productObj);
+    closeQuickAddModal();
+  }
+
+  /*********************************************************************
+   * 7. FULL ADD (or EDIT)
+   *********************************************************************/
+  function openFullAddModal() {
+    editMode = false;
+    editProductId = null;
+    document.getElementById('modalTitle').textContent = 'Full Add Product';
+    document.getElementById('fullAddModalOverlay').style.display = 'flex';
+    document.getElementById('fullAddForm').reset();
+  }
+  function closeFullAddModal() {
+    document.getElementById('fullAddModalOverlay').style.display = 'none';
+  }
+
+  // If user clicks "Update" in table/grid, we open full form in "edit mode"
+  function openEditProduct(product) {
+    editMode = true;
+    editProductId = product.id;
+    // Fill form
+    document.getElementById('modalTitle').textContent = 'Update Product';
+    document.getElementById('pName').value = product.name;
+    document.getElementById('pSku').value = product.sku;
+    document.getElementById('pPurchasePrice').value = product.purchasePrice;
+    document.getElementById('pStock').value = product.stock;
+    document.getElementById('pReorderThreshold').value = product.reorderThreshold;
+    document.getElementById('pReorderQty').value = product.reorderQty;
+    document.getElementById('pCategory').value = product.category;
+    
+    // multi-select status
+    const statusSelect = document.getElementById('pStatus');
+    Array.from(statusSelect.options).forEach(opt => {
+      opt.selected = product.status.includes(opt.value);
+    });
+    document.getElementById('pSupplier').value = product.supplier;
+    document.getElementById('pLocation').value = product.location;
+    document.getElementById('pDescription').value = product.description;
+
+    // Note: We'll skip image for editing (no preview). If you want to override, user picks new file.
+
+    // Show modal
+    document.getElementById('fullAddModalOverlay').style.display = 'flex';
+  }
+
+  function handleFullAddSubmit(e) {
+    e.preventDefault();
+    // Gather
+    const name = document.getElementById('pName').value.trim();
+    const sku = document.getElementById('pSku').value.trim();
+    const purchasePrice = document.getElementById('pPurchasePrice').value;
+    const stock = document.getElementById('pStock').value;
+    const reorderThreshold = document.getElementById('pReorderThreshold').value;
+    const reorderQty = document.getElementById('pReorderQty').value;
+    const category = document.getElementById('pCategory').value.trim();
+    const statusArr = Array.from(document.getElementById('pStatus').selectedOptions).map(opt => opt.value);
+    const supplier = document.getElementById('pSupplier').value.trim();
+    const location = document.getElementById('pLocation').value.trim();
+    const description = document.getElementById('pDescription').value;
+
+    const imageFile = document.getElementById('pImage').files[0];
+    if (imageFile) {
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        finalizeFullAdd({
+          name, sku, purchasePrice, stock, reorderThreshold, reorderQty,
+          category, status: statusArr, supplier, location, 
+          imageData: ev.target.result, description
         });
-
-        // Nav
-        document.getElementById('navDashboard').addEventListener('click', () => {
-            switchSection('dashboard');
-            document.getElementById('sidebarMenu').classList.remove('show');
-        });
-        document.getElementById('navInventory').addEventListener('click', () => {
-            switchSection('inventory');
-            document.getElementById('sidebarMenu').classList.remove('show');
-        });
-        document.getElementById('navProductDetail').addEventListener('click', () => {
-            switchSection('productDetail');
-            document.getElementById('sidebarMenu').classList.remove('show');
-        });
-
-        // Tools
-        document.getElementById('exportCsv').addEventListener('click', exportCsv);
-        document.getElementById('importData').addEventListener('click', () => {
-            alert('Import placeholder. Use SheetJS or CSV parser for real implementation.');
-        });
-        document.getElementById('fullAddLink').addEventListener('click', () => {
-            openFullAddModal();
-            document.getElementById('sidebarMenu').classList.remove('show');
-        });
-
-        // Quick Add
-        document.getElementById('quickAddBtn').addEventListener('click', openQuickAddModal);
-        document.getElementById('closeQuickAdd').addEventListener('click', closeQuickAddModal);
-        document.getElementById('quickAddForm').addEventListener('submit', handleQuickAddSubmit);
-
-        // Full Add
-        document.getElementById('closeFullAdd').addEventListener('click', closeFullAddModal);
-        document.getElementById('fullAddForm').addEventListener('submit', handleFullAddSubmit);
-
-        // Inventory
-        document.getElementById('btnViewGrid').addEventListener('click', () => {
-            showGridView(true);
-        });
-        document.getElementById('btnViewTable').addEventListener('click', () => {
-            showGridView(false);
-        });
-        document.getElementById('batchUpdateBtn').addEventListener('click', openBatchUpdateModal);
-
-        // CheckAll for batch update
-        document.getElementById('checkAll').addEventListener('change', (e) => {
-            const checkboxes = document.querySelectorAll('.row-checkbox');
-            checkboxes.forEach(cb => {
-                cb.checked = e.target.checked;
-            });
-        });
-
-        // Batch Update modal
-        document.getElementById('closeBatchUpdate').addEventListener('click', closeBatchUpdateModal);
-        document.getElementById('batchUpdateForm').addEventListener('submit', handleBatchUpdate);
-
-        // Dashboard card clicks
-        document.getElementById('cardTotalItems').addEventListener('click', () => {
-            switchSection('inventory');
-        });
-        document.getElementById('cardTotalValue').addEventListener('click', () => {
-            switchSection('inventory');
-        });
+      };
+      reader.readAsDataURL(imageFile);
+    } else {
+      finalizeFullAdd({
+        name, sku, purchasePrice, stock, reorderThreshold, reorderQty,
+        category, status: statusArr, supplier, location, imageData:'', description
+      });
     }
+  }
 
-    function switchSection(sectionName) {
-        document.getElementById('dashboardSection').style.display = 'none';
-        document.getElementById('inventorySection').style.display = 'none';
-        document.getElementById('productDetailSection').style.display = 'none';
-
-        if (sectionName === 'dashboard') {
-            document.getElementById('dashboardSection').style.display = 'block';
-            document.getElementById('breadcrumbCurrent').textContent = 'Dashboard';
-        } else if (sectionName === 'inventory') {
-            document.getElementById('inventorySection').style.display = 'block';
-            document.getElementById('breadcrumbCurrent').textContent = 'Inventory';
-        } else if (sectionName === 'productDetail') {
-            document.getElementById('productDetailSection').style.display = 'block';
-            document.getElementById('breadcrumbCurrent').textContent = 'Product Detail';
-        }
+  function finalizeFullAdd(data) {
+    if (!editMode) {
+      // Adding new
+      const productObj = createProductObj(data);
+      addProduct(productObj);
+    } else {
+      // Updating existing
+      data.id = editProductId; 
+      const updatedObj = createProductObj(data);
+      updateProduct(updatedObj);
     }
+    closeFullAddModal();
+  }
 
-    /*********************************************************************
-     * 4. CORE INVENTORY LOGIC
-     *********************************************************************/
-    function createProductObj({
-        id=null,
-        name,
-        sku,
-        purchasePrice,
-        stock,
-        category,
-        status,
-        supplier,
-        location,
-        description,
-        reorderThreshold,
-        reorderQty,
-        imageData
-    }) {
-        const dateAdded = new Date().toISOString().slice(0,10);
-        const purPrice = Number(purchasePrice) || 0;
-        const sellingPrice = calcSellingPrice(purPrice);
-        return {
-            id: id || crypto.randomUUID(),
-            name: name || 'Unnamed',
-            sku: sku || generateSku(),
-            purchasePrice: purPrice,
-            sellingPrice,
-            stock: Number(stock) || 0,
-            reorderThreshold: Number(reorderThreshold) || 0,
-            reorderQty: Number(reorderQty) || 0,
-            category: category || '',
-            status: status || [],
-            supplier: supplier || '',
-            location: location || '',
-            description: description || '',
-            imageData: imageData || '',
-            dateAdded
-        };
+  /*********************************************************************
+   * 8. BATCH UPDATE
+   *********************************************************************/
+  function openBatchUpdateModal() {
+    // Check if any row is selected
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    if (checkboxes.length === 0) {
+      alert('No items selected for batch update.');
+      return;
     }
-    function generateSku() {
-        return 'SKU-' + Math.floor(Math.random() * 100000);
+    document.getElementById('batchUpdateModalOverlay').style.display = 'flex';
+    document.getElementById('batchUpdateForm').reset();
+  }
+  function closeBatchUpdateModal() {
+    document.getElementById('batchUpdateModalOverlay').style.display = 'none';
+  }
+  function handleBatchUpdate(e) {
+    e.preventDefault();
+    const newCat = document.getElementById('batchCategory').value.trim();
+    if (!newCat) {
+      alert('Please enter a category for batch update.');
+      return;
     }
-    function calcSellingPrice(price) {
-        return ((price * 2) + (price * 0.1)).toFixed(2);
+    // gather all checked row IDs
+    const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+    checkboxes.forEach(cb => {
+      const pid = cb.value;
+      const idx = inventoryData.findIndex(p => p.id === pid);
+      if (idx !== -1) {
+        inventoryData[idx].category = newCat;
+      }
+    });
+    renderAllViews();
+    saveData();
+    closeBatchUpdateModal();
+  }
+
+  /*********************************************************************
+   * 9. EXPORT CSV & CHARTS
+   *********************************************************************/
+  function exportCsv() {
+    if (!inventoryData.length) {
+      alert('No products to export.');
+      return;
     }
-    function addProduct(productObj) {
-        inventoryData.push(productObj);
-        renderAllViews();
-        saveData();
+    let csvContent = 'data:text/csv;charset=utf-8,';
+    csvContent += [
+      'Product Name','SKU','Purchase Price','Selling Price','Stock',
+      'Category','Status','Supplier','Date Added','Location'
+    ].join(',') + '\n';
+
+    inventoryData.forEach((p) => {
+      const row = [
+        p.name,
+        p.sku,
+        p.purchasePrice,
+        p.sellingPrice,
+        p.stock,
+        p.category,
+        (p.status||[]).join('|'),
+        p.supplier,
+        p.dateAdded,
+        p.location
+      ];
+      csvContent += row.join(',') + '\n';
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'fidget_inventory_export.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function initCharts() {
+    if (typeof Chart === 'undefined') {
+      console.warn('Chart.js not available. Placeholder only.');
     }
-    function updateProduct(updatedObj) {
-        const index = inventoryData.findIndex(p => p.id === updatedObj.id);
-        if (index !== -1) {
-            // keep the original dateAdded
-            updatedObj.dateAdded = inventoryData[index].dateAdded;
-            inventoryData[index] = updatedObj;
-            renderAllViews();
-            saveData();
-        }
-    }
-    function deleteProduct(productId) {
-        const index = inventoryData.findIndex(p => p.id === productId);
-        if (index !== -1) {
-            inventoryData.splice(index, 1);
-            renderAllViews();
-            saveData();
-        }
-    }
-
-    /*********************************************************************
-     * 5. RENDERING (TABLE / GRID / DASHBOARD)
-     *********************************************************************/
-    function renderAllViews() {
-        renderInventoryTable();
-        renderInventoryGrid();
-        updateDashboard();
-    }
-
-    function renderInventoryTable() {
-        const tbody = document.querySelector('#inventoryTable tbody');
-        tbody.innerHTML = '';
-
-        inventoryData.forEach((product) => {
-            const tr = document.createElement('tr');
-            // Checkbox for batch
-            const cbTd = document.createElement('td');
-            const cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.classList.add('row-checkbox');
-            cb.value = product.id;
-            cbTd.appendChild(cb);
-            tr.appendChild(cbTd);
-
-            // Image
-            const imgTd = document.createElement('td');
-            const img = document.createElement('img');
-            img.src = product.imageData
-                ? product.imageData
-                : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-            imgTd.appendChild(img);
-            tr.appendChild(imgTd);
-
-            // Name
-            const nameTd = document.createElement('td');
-            nameTd.textContent = product.name;
-            tr.appendChild(nameTd);
-
-            // SKU
-            const skuTd = document.createElement('td');
-            skuTd.textContent = product.sku;
-            tr.appendChild(skuTd);
-
-            // Purchase Price
-            const purchaseTd = document.createElement('td');
-            purchaseTd.textContent = '£' + product.purchasePrice.toFixed(2);
-            tr.appendChild(purchaseTd);
-
-            // Selling Price
-            const sellingTd = document.createElement('td');
-            sellingTd.textContent = '£' + product.sellingPrice;
-            tr.appendChild(sellingTd);
-
-            // Stock
-            const stockTd = document.createElement('td');
-            stockTd.textContent = product.stock;
-            tr.appendChild(stockTd);
-
-            // Category
-            const catTd = document.createElement('td');
-            catTd.textContent = product.category;
-            tr.appendChild(catTd);
-
-            // Status
-            const statusTd = document.createElement('td');
-            statusTd.textContent = (product.status || []).join(', ');
-            tr.appendChild(statusTd);
-
-            // Supplier
-            const suppTd = document.createElement('td');
-            suppTd.textContent = product.supplier;
-            tr.appendChild(suppTd);
-
-            // Date
-            const dateTd = document.createElement('td');
-            dateTd.textContent = product.dateAdded;
-            tr.appendChild(dateTd);
-
-            // Location
-            const locTd = document.createElement('td');
-            locTd.textContent = product.location;
-            tr.appendChild(locTd);
-
-            // Actions
-            const actionTd = document.createElement('td');
-            const btnEdit = document.createElement('button');
-            btnEdit.textContent = 'Update';
-            btnEdit.style.marginRight = '4px';
-            btnEdit.onclick = () => {
-                openEditProduct(product);
-            };
-            const btnDel = document.createElement('button');
-            btnDel.textContent = 'Delete';
-            btnDel.onclick = () => {
-                if (confirm('Are you sure you want to delete this product?')) {
-                    deleteProduct(product.id);
-                }
-            };
-            actionTd.appendChild(btnEdit);
-            actionTd.appendChild(btnDel);
-            tr.appendChild(actionTd);
-
-            tbody.appendChild(tr);
-        });
-    }
-
-    function renderInventoryGrid() {
-        const gridContainer = document.getElementById('gridContainer');
-        gridContainer.innerHTML = '';
-
-        inventoryData.forEach((product) => {
-            const itemDiv = document.createElement('div');
-            itemDiv.classList.add('grid-item');
-
-            const img = document.createElement('img');
-            img.src = product.imageData
-                ? product.imageData
-                : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-            itemDiv.appendChild(img);
-
-            const title = document.createElement('h4');
-            title.textContent = product.name;
-            itemDiv.appendChild(title);
-
-            const details = document.createElement('p');
-            details.textContent = `SKU: ${product.sku}`;
-            itemDiv.appendChild(details);
-
-            const priceLine = document.createElement('p');
-            priceLine.textContent = `£${product.purchasePrice.toFixed(2)} -> £${product.sellingPrice}`;
-            itemDiv.appendChild(priceLine);
-
-            const stockLine = document.createElement('p');
-            stockLine.textContent = `Stock: ${product.stock}`;
-            itemDiv.appendChild(stockLine);
-
-            const catLine = document.createElement('p');
-            catLine.textContent = `Category: ${product.category}`;
-            itemDiv.appendChild(catLine);
-
-            // Actions
-            const actionsDiv = document.createElement('div');
-            actionsDiv.classList.add('actions');
-
-            const editBtn = document.createElement('button');
-            editBtn.textContent = 'Update';
-            editBtn.onclick = () => {
-                openEditProduct(product);
-            };
-            const delBtn = document.createElement('button');
-            delBtn.textContent = 'Delete';
-            delBtn.onclick = () => {
-                if (confirm('Are you sure you want to delete this product?')) {
-                    deleteProduct(product.id);
-                }
-            };
-            actionsDiv.appendChild(editBtn);
-            actionsDiv.appendChild(delBtn);
-
-            itemDiv.appendChild(actionsDiv);
-
-            gridContainer.appendChild(itemDiv);
-        });
-    }
-
-    function showGridView(enableGrid) {
-        const tableView = document.getElementById('tableViewContainer');
-        const gridView = document.getElementById('gridViewContainer');
-        if (enableGrid) {
-            tableView.classList.add('hidden');
-            gridView.classList.remove('hidden');
-        } else {
-            tableView.classList.remove('hidden');
-            gridView.classList.add('hidden');
-        }
-    }
-
-    function updateDashboard() {
-        document.getElementById('totalItems').textContent = inventoryData.length;
-
-        let totalVal = 0;
-        let lowStock = 0;
-        inventoryData.forEach(p => {
-            totalVal += p.purchasePrice * p.stock;
-            if (p.stock <= p.reorderThreshold) {
-                lowStock++;
-            }
-        });
-        document.getElementById('totalValue').textContent = '£' + totalVal.toFixed(2);
-        document.getElementById('lowStockCount').textContent = lowStock;
-    }
-
-    /*********************************************************************
-     * 6. QUICK ADD
-     *********************************************************************/
-    function openQuickAddModal() {
-        document.getElementById('quickAddModalOverlay').style.display = 'flex';
-        document.body.classList.add('modal-open'); // Prevent scroll behind modal
-    }
-    function closeQuickAddModal() {
-        document.getElementById('quickAddModalOverlay').style.display = 'none';
-        document.body.classList.remove('modal-open');
-    }
-    function handleQuickAddSubmit(event) {
-        event.preventDefault();
-        const qName = document.getElementById('qName').value;
-        const qPurchasePrice = document.getElementById('qPurchasePrice').value;
-        const qStock = document.getElementById('qStock').value;
-        const qCategory = document.getElementById('qCategory').value;
-        const qStatus = Array.from(document.getElementById('qStatus').selectedOptions).map(opt => opt.value);
-        const qSupplier = document.getElementById('qSupplier').value;
-        const qLocation = document.getElementById('qLocation').value;
-
-        if (!qName || !qPurchasePrice || !qStock) {
-            alert('Please fill in Product Name, Purchase Price, and Stock Qty.');
-            return;
-        }
-
-        const product = createProductObj({
-            name: qName,
-            purchasePrice: qPurchasePrice,
-            stock: qStock,
-            category: qCategory,
-            status: qStatus,
-            supplier: qSupplier,
-            location: qLocation
-        });
-        addProduct(product);
-        closeQuickAddModal();
-        event.target.reset(); // clear form
-    }
-
-    /*********************************************************************
-     * 7. FULL ADD / EDIT MODAL
-     *********************************************************************/
-    function openFullAddModal() {
-        editMode = false;
-        document.getElementById('modalTitle').textContent = 'Add New Product';
-        document.getElementById('fullAddModalOverlay').style.display = 'flex';
-        document.body.classList.add('modal-open');
-        document.getElementById('fullAddForm').reset(); // Clear form for add
-    }
-    function openEditProduct(product) {
-        editMode = true;
-        editProductId = product.id;
-        document.getElementById('modalTitle').textContent = 'Edit Product';
-        document.getElementById('fullAddModalOverlay').style.display = 'flex';
-        document.body.classList.add('modal-open');
-        populateFullAddForm(product);
-    }
-    function closeFullAddModal() {
-        document.getElementById('fullAddModalOverlay').style.display = 'none';
-        document.body.classList.remove('modal-open');
-        editMode = false;
-        editProductId = null;
-    }
-    function populateFullAddForm(product) {
-        document.getElementById('pName').value = product.name;
-        document.getElementById('pSku').value = product.sku;
-        document.getElementById('pPurchasePrice').value = product.purchasePrice;
-        document.getElementById('pStock').value = product.stock;
-        document.getElementById('pReorderThreshold').value = product.reorderThreshold;
-        document.getElementById('pReorderQty').value = product.reorderQty;
-        document.getElementById('pCategory').value = product.category;
-        // Multi-select status
-        const statusOptions = document.getElementById('pStatus').options;
-        for (let option of statusOptions) {
-            option.selected = product.status.includes(option.value);
-        }
-        document.getElementById('pSupplier').value = product.supplier;
-        document.getElementById('pLocation').value = product.location;
-        document.getElementById('pDescription').value = product.description;
-        // Image - if you want to show existing image in edit form, handle here.
-        // For now, leave image input as is for potential update.
-    }
-
-    function handleFullAddSubmit(event) {
-        event.preventDefault();
-        const pName = document.getElementById('pName').value;
-        const pSku = document.getElementById('pSku').value;
-        const pPurchasePrice = document.getElementById('pPurchasePrice').value;
-        const pStock = document.getElementById('pStock').value;
-        const pReorderThreshold = document.getElementById('pReorderThreshold').value;
-        const pReorderQty = document.getElementById('pReorderQty').value;
-        const pCategory = document.getElementById('pCategory').value;
-        const pStatus = Array.from(document.getElementById('pStatus').selectedOptions).map(opt => opt.value);
-        const pSupplier = document.getElementById('pSupplier').value;
-        const pLocation = document.getElementById('pLocation').value;
-        const pDescription = document.getElementById('pDescription').value;
-        const pImageFile = document.getElementById('pImage').files[0];
-        // Image handling - convert to base64
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const imageDataBase64 = reader.result;
-            const product = createProductObj({
-                id: editMode ? editProductId : null, // id for edit mode
-                name: pName,
-                sku: pSku,
-                purchasePrice: pPurchasePrice,
-                stock: pStock,
-                reorderThreshold: pReorderThreshold,
-                reorderQty: pReorderQty,
-                category: pCategory,
-                status: pStatus,
-                supplier: pSupplier,
-                location: pLocation,
-                description: pDescription,
-                imageData: imageDataBase64 // base64 image data
-            });
-            if (editMode) {
-                updateProduct(product);
-            } else {
-                addProduct(product);
-            }
-            closeFullAddModal();
-        };
-        if (pImageFile) {
-            reader.readAsDataURL(pImageFile); // start reading, onloadend will handle addProduct
-        } else {
-            // No image, still add product
-            const product = createProductObj({
-                id: editMode ? editProductId : null,
-                name: pName,
-                sku: pSku,
-                purchasePrice: pPurchasePrice,
-                stock: pStock,
-                reorderThreshold: pReorderThreshold,
-                reorderQty: pReorderQty,
-                category: pCategory,
-                status: pStatus,
-                supplier: pSupplier,
-                location: pLocation,
-                description: pDescription
-            });
-            if (editMode) {
-                updateProduct(product);
-            } else {
-                addProduct(product);
-            }
-            closeFullAddModal();
-        }
-        event.target.reset(); // clear form
-    }
-
-    /*********************************************************************
-     * 8. BATCH UPDATE
-     *********************************************************************/
-    function openBatchUpdateModal() {
-        document.getElementById('batchUpdateModalOverlay').style.display = 'flex';
-        document.body.classList.add('modal-open');
-    }
-    function closeBatchUpdateModal() {
-        document.getElementById('batchUpdateModalOverlay').style.display = 'none';
-        document.body.classList.remove('modal-open');
-        document.getElementById('batchUpdateForm').reset();
-    }
-    function handleBatchUpdate(event) {
-        event.preventDefault();
-        const batchCategory = document.getElementById('batchCategory').value;
-        const checkboxes = document.querySelectorAll('.row-checkbox:checked');
-        checkboxes.forEach(cb => {
-            const productId = cb.value;
-            const productIndex = inventoryData.findIndex(p => p.id === productId);
-            if (productIndex !== -1) {
-                inventoryData[productIndex].category = batchCategory;
-            }
-        });
-        renderInventoryTable(); // re-render table to show updated categories
-        updateDashboard(); // dashboard counts might change
-        closeBatchUpdateModal();
-        document.getElementById('checkAll').checked = false; // uncheck header checkbox
-    }
-
-    /*********************************************************************
-     * 9. CSV EXPORT
-     *********************************************************************/
-    function exportCsv() {
-        const header = 'Product Name,SKU,Purchase Price,Selling Price,Stock,Category,Status,Supplier,Date Added,Location,Description\n';
-        const csvRows = inventoryData.map(product => {
-            const statuses = (product.status || []).join(';'); // handle multi-select status
-            return `${product.name},${product.sku},${product.purchasePrice},${product.sellingPrice},${product.stock},${product.category},"${statuses}",${product.supplier},${product.dateAdded},${product.location},"${product.description.replace(/"/g, '""')}"`; // basic CSV format, escaping quotes in description
-        });
-        const csvContent = header + csvRows.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', 'inventory_export.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link); // clean up
-    }
-
-    /*********************************************************************
-     * 10. CHARTS (Chart.js library assumed)
-     *********************************************************************/
-    function initCharts() {
-        renderCategoryChart();
-        renderStatusChart();
-    }
-    function renderCategoryChart() {
-        const categoryCounts = {};
-        inventoryData.forEach(product => {
-            const cat = product.category || 'No Category';
-            categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-        });
-        const labels = Object.keys(categoryCounts);
-        const data = Object.values(categoryCounts);
-        const ctx = document.getElementById('chartByCategory').getContext('2d');
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Products by Category',
-                    data: data,
-                    backgroundColor: [
-                        '#FF6B6B', '#4ECDC4', '#FFE66D', '#8481FF', '#FC7BFC', '#E2FFA5', '#FFDAB9', '#B0E0E6'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                    },
-                    title: {
-                        display: true,
-                        text: 'Inventory by Category'
-                    }
-                }
-            }
-        });
-    }
-
-    function renderStatusChart() {
-        const statusCounts = {};
-        inventoryData.forEach(product => {
-            (product.status || ['No Status']).forEach(stat => { // in case status is null/undefined
-                statusCounts[stat] = (statusCounts[stat] || 0) + 1;
-            });
-        });
-        const labels = Object.keys(statusCounts);
-        const data = Object.values(statusCounts);
-        const ctx = document.getElementById('chartByStatus').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Products by Status',
-                    data: data,
-                    backgroundColor: var(--color-secondary),
-                    borderColor:  var(--color-primary),
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    title: {
-                        display: true,
-                        text: 'Inventory by Status'
-                    }
-                }
-            }
-        });
-    }
-
-    </script>
-
+  }
+  </script>
 </body>
 </html>
