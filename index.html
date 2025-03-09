@@ -3,14 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>cookiemonster inventory</title>
-  <!-- 
-    Single-page HTML 
-    Enhanced with:
-    - Grid View toggle
-    - Batch Update with checkboxes
-    - Clickable dashboard card leads to Inventory
-    - Delete & Update per row (opens full form for update)
-  -->
   <style>
     /* ==============================
        1. RESET & VARIABLES
@@ -24,15 +16,15 @@
       --base-font-size: 24px;  
       --line-height-base: 1.7;
 
-      --color-primary: #FF6B6B;   
-      --color-secondary: #4ECDC4; 
-      --color-accent: #FFE66D;    
-      --color-neutral: #F7FFF7;   
-      --color-dark: #1A535C;      
+      /* BAY-LEAF COLOR SCHEME */
+      --color-primary: #48846a;
+      --color-secondary: #8abea5;
+      --color-accent: #b7d8c7;
+      --color-neutral: #f4f9f6;
+      --color-dark: #12211c;
 
       --font-header: 'Poppins', sans-serif;
       --font-body: 'Open Sans', sans-serif;
-
       --sidebar-width: 220px;
     }
 
@@ -212,7 +204,7 @@
       flex: 1;
       min-width: 160px;
       padding: 1rem;
-      cursor: pointer; /* clickable */
+      cursor: pointer;
     }
     .dashboard__card:hover {
       background-color: #ffe;
@@ -556,7 +548,7 @@
     </main>
   </div>
 
-  <!-- QUICK ADD MODAL -->
+  <!-- MODALS -->
   <div class="modal-overlay" id="quickAddModalOverlay">
     <div class="modal">
       <h2>Quick Add Product</h2>
@@ -662,7 +654,7 @@
     </div>
   </div>
 
-  <!-- BATCH UPDATE MODAL (demo) -->
+  <!-- BATCH UPDATE MODAL -->
   <div class="modal-overlay" id="batchUpdateModalOverlay">
     <div class="modal">
       <h2>Batch Update</h2>
@@ -686,9 +678,8 @@
   let dailyBackupKey = 'fidgetToyInventoryBackup_';
   let autoSaveInterval;
 
-  // Track edit mode (if we're editing an existing product)
   let editMode = false;
-  let editProductId = null; // which product are we editing?
+  let editProductId = null;
 
   document.addEventListener('DOMContentLoaded', initApp);
 
@@ -732,12 +723,10 @@
    * 3. EVENTS & NAV
    *********************************************************************/
   function bindEvents() {
-    // Hamburger
     document.getElementById('hamburgerBtn').addEventListener('click', () => {
       document.getElementById('sidebarMenu').classList.toggle('show');
     });
 
-    // Nav
     document.getElementById('navDashboard').addEventListener('click', () => {
       switchSection('dashboard');
       document.getElementById('sidebarMenu').classList.remove('show');
@@ -751,7 +740,6 @@
       document.getElementById('sidebarMenu').classList.remove('show');
     });
 
-    // Tools
     document.getElementById('exportCsv').addEventListener('click', exportCsv);
     document.getElementById('importData').addEventListener('click', () => {
       alert('Import placeholder. Use SheetJS or CSV parser for real implementation.');
@@ -761,16 +749,13 @@
       document.getElementById('sidebarMenu').classList.remove('show');
     });
 
-    // Quick Add
     document.getElementById('quickAddBtn').addEventListener('click', openQuickAddModal);
     document.getElementById('closeQuickAdd').addEventListener('click', closeQuickAddModal);
     document.getElementById('quickAddForm').addEventListener('submit', handleQuickAddSubmit);
 
-    // Full Add
     document.getElementById('closeFullAdd').addEventListener('click', closeFullAddModal);
     document.getElementById('fullAddForm').addEventListener('submit', handleFullAddSubmit);
 
-    // Inventory
     document.getElementById('btnViewGrid').addEventListener('click', () => {
       showGridView(true);
     });
@@ -779,7 +764,6 @@
     });
     document.getElementById('batchUpdateBtn').addEventListener('click', openBatchUpdateModal);
 
-    // CheckAll for batch update
     document.getElementById('checkAll').addEventListener('change', (e) => {
       const checkboxes = document.querySelectorAll('.row-checkbox');
       checkboxes.forEach(cb => {
@@ -787,11 +771,9 @@
       });
     });
 
-    // Batch Update modal
     document.getElementById('closeBatchUpdate').addEventListener('click', closeBatchUpdateModal);
     document.getElementById('batchUpdateForm').addEventListener('submit', handleBatchUpdate);
 
-    // Dashboard card clicks
     document.getElementById('cardTotalItems').addEventListener('click', () => {
       switchSection('inventory');
     });
@@ -870,7 +852,6 @@
   function updateProduct(updatedObj) {
     const index = inventoryData.findIndex(p => p.id === updatedObj.id);
     if (index !== -1) {
-      // keep the original dateAdded
       updatedObj.dateAdded = inventoryData[index].dateAdded; 
       inventoryData[index] = updatedObj;
       renderAllViews();
@@ -887,7 +868,7 @@
   }
 
   /*********************************************************************
-   * 5. RENDERING (TABLE / GRID / DASHBOARD)
+   * 5. RENDERING
    *********************************************************************/
   function renderAllViews() {
     renderInventoryTable();
@@ -901,7 +882,6 @@
 
     inventoryData.forEach((product) => {
       const tr = document.createElement('tr');
-      // Checkbox for batch
       const cbTd = document.createElement('td');
       const cb = document.createElement('input');
       cb.type = 'checkbox';
@@ -910,7 +890,6 @@
       cbTd.appendChild(cb);
       tr.appendChild(cbTd);
 
-      // Image
       const imgTd = document.createElement('td');
       const img = document.createElement('img');
       img.src = product.imageData
@@ -919,57 +898,46 @@
       imgTd.appendChild(img);
       tr.appendChild(imgTd);
 
-      // Name
       const nameTd = document.createElement('td');
       nameTd.textContent = product.name;
       tr.appendChild(nameTd);
 
-      // SKU
       const skuTd = document.createElement('td');
       skuTd.textContent = product.sku;
       tr.appendChild(skuTd);
 
-      // Purchase Price
       const purchaseTd = document.createElement('td');
       purchaseTd.textContent = '£' + product.purchasePrice.toFixed(2);
       tr.appendChild(purchaseTd);
 
-      // Selling Price
       const sellingTd = document.createElement('td');
       sellingTd.textContent = '£' + product.sellingPrice;
       tr.appendChild(sellingTd);
 
-      // Stock
       const stockTd = document.createElement('td');
       stockTd.textContent = product.stock;
       tr.appendChild(stockTd);
 
-      // Category
       const catTd = document.createElement('td');
       catTd.textContent = product.category;
       tr.appendChild(catTd);
 
-      // Status
       const statusTd = document.createElement('td');
       statusTd.textContent = (product.status || []).join(', ');
       tr.appendChild(statusTd);
 
-      // Supplier
       const suppTd = document.createElement('td');
       suppTd.textContent = product.supplier;
       tr.appendChild(suppTd);
 
-      // Date
       const dateTd = document.createElement('td');
       dateTd.textContent = product.dateAdded;
       tr.appendChild(dateTd);
 
-      // Location
       const locTd = document.createElement('td');
       locTd.textContent = product.location;
       tr.appendChild(locTd);
 
-      // Actions
       const actionTd = document.createElement('td');
       const btnEdit = document.createElement('button');
       btnEdit.textContent = 'Update';
@@ -1026,7 +994,6 @@
       catLine.textContent = `Category: ${product.category}`;
       itemDiv.appendChild(catLine);
 
-      // Actions
       const actionsDiv = document.createElement('div');
       actionsDiv.classList.add('actions');
 
@@ -1112,7 +1079,7 @@
   }
 
   /*********************************************************************
-   * 7. FULL ADD (or EDIT)
+   * 7. FULL ADD/EDIT
    *********************************************************************/
   function openFullAddModal() {
     editMode = false;
@@ -1125,11 +1092,9 @@
     document.getElementById('fullAddModalOverlay').style.display = 'none';
   }
 
-  // If user clicks "Update" in table/grid, we open full form in "edit mode"
   function openEditProduct(product) {
     editMode = true;
     editProductId = product.id;
-    // Fill form
     document.getElementById('modalTitle').textContent = 'Update Product';
     document.getElementById('pName').value = product.name;
     document.getElementById('pSku').value = product.sku;
@@ -1139,7 +1104,6 @@
     document.getElementById('pReorderQty').value = product.reorderQty;
     document.getElementById('pCategory').value = product.category;
     
-    // multi-select status
     const statusSelect = document.getElementById('pStatus');
     Array.from(statusSelect.options).forEach(opt => {
       opt.selected = product.status.includes(opt.value);
@@ -1148,15 +1112,11 @@
     document.getElementById('pLocation').value = product.location;
     document.getElementById('pDescription').value = product.description;
 
-    // Note: We'll skip image for editing (no preview). If you want to override, user picks new file.
-
-    // Show modal
     document.getElementById('fullAddModalOverlay').style.display = 'flex';
   }
 
   function handleFullAddSubmit(e) {
     e.preventDefault();
-    // Gather
     const name = document.getElementById('pName').value.trim();
     const sku = document.getElementById('pSku').value.trim();
     const purchasePrice = document.getElementById('pPurchasePrice').value;
@@ -1190,11 +1150,9 @@
 
   function finalizeFullAdd(data) {
     if (!editMode) {
-      // Adding new
       const productObj = createProductObj(data);
       addProduct(productObj);
     } else {
-      // Updating existing
       data.id = editProductId; 
       const updatedObj = createProductObj(data);
       updateProduct(updatedObj);
@@ -1206,7 +1164,6 @@
    * 8. BATCH UPDATE
    *********************************************************************/
   function openBatchUpdateModal() {
-    // Check if any row is selected
     const checkboxes = document.querySelectorAll('.row-checkbox:checked');
     if (checkboxes.length === 0) {
       alert('No items selected for batch update.');
@@ -1225,7 +1182,6 @@
       alert('Please enter a category for batch update.');
       return;
     }
-    // gather all checked row IDs
     const checkboxes = document.querySelectorAll('.row-checkbox:checked');
     checkboxes.forEach(cb => {
       const pid = cb.value;
